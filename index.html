@@ -105,20 +105,18 @@
 </div>
 
 <script>
-    const banqueParDefaut = {
-        repas: [
-            {type: "bœuf", nom: "Pâté chinois"}, {type: "bœuf", nom: "Sloppy Joe"}, {type: "bœuf", nom: "Steak haché en sauce"}, 
-            {type: "bœuf", nom: "Boulette M&M"}, {type: "pâte", nom: "Spaghetti"}, {type: "bœuf", nom: "Pâte au boeuf à la coréenne"},
-            {type: "poulet", nom: "Poulet entier"}, {type: "poulet", nom: "Général Tao"}, {type: "poulet", nom: "Burger poulet"}, 
-            {type: "poulet", nom: "Fajitas"}, {type: "poulet", nom: "Poulet rouge"}, {type: "poulet", nom: "Poulet Parmigiana"},
-            {type: "porc", nom: "Belogne rôti"}, {type: "porc", nom: "Patate au jambon"}, {type: "porc", nom: "Filet de porc"}, 
-            {type: "porc", nom: "Saucisses dans le sirop"}, {type: "porc", nom: "Épaule de porc"}, {type: "pâte", nom: "Pâte Carbonara"},
-            {type: "poisson", nom: "Poke Bowl"}, {type: "poisson", nom: "Filet de poisson pané"}, {type: "poisson", nom: "Guedille thon"}, 
-            {type: "poisson", nom: "Casserole de thon"}, {type: "poisson", nom: "Macaroni à la viande"}, {type: "pâte", nom: "Mac & Cheese"},
-            {type: "pâte", nom: "Lasagne"}, {type: "pâte", nom: "Tortellini sauce rosée"}, {type: "poulet", nom: "Club sandwich"}, 
-            {type: "poulet", nom: "Vol-au-vent"}, {type: "bœuf", nom: "Burritos Bowl"}, {type: "bœuf", nom: "Quesedillas"}
-        ]
-    };
+    const banqueParDefaut = [
+        {type: "bœuf", nom: "Pâté chinois"}, {type: "bœuf", nom: "Sloppy Joe"}, {type: "bœuf", nom: "Steak haché en sauce"}, 
+        {type: "bœuf", nom: "Boulette M&M"}, {type: "pâte", nom: "Spaghetti"}, {type: "bœuf", nom: "Pâte au boeuf à la coréenne"},
+        {type: "poulet", nom: "Poulet entier"}, {type: "poulet", nom: "Général Tao"}, {type: "poulet", nom: "Burger poulet"}, 
+        {type: "poulet", nom: "Fajitas"}, {type: "poulet", nom: "Poulet rouge"}, {type: "poulet", nom: "Poulet Parmigiana"},
+        {type: "porc", nom: "Belogne rôti"}, {type: "porc", nom: "Patate au jambon"}, {type: "porc", nom: "Filet de porc"}, 
+        {type: "porc", nom: "Saucisses dans le sirop"}, {type: "porc", nom: "Épaule de porc"}, {type: "pâte", nom: "Pâte Carbonara"},
+        {type: "poisson", nom: "Poke Bowl"}, {type: "poisson", nom: "Filet de poisson pané"}, {type: "poisson", nom: "Guedille thon"}, 
+        {type: "poisson", nom: "Casserole de thon"}, {type: "poisson", nom: "Macaroni à la viande"}, {type: "pâte", nom: "Mac & Cheese"},
+        {type: "pâte", nom: "Lasagne"}, {type: "pâte", nom: "Tortellini sauce rosée"}, {type: "poulet", nom: "Club sandwich"}, 
+        {type: "poulet", nom: "Vol-au-vent"}, {type: "bœuf", nom: "Burritos Bowl"}, {type: "bœuf", nom: "Quesedillas"}
+    ];
 
     let banqueDonnees = [];
     let semaines = [];
@@ -131,13 +129,10 @@
             let memoire = localStorage.getItem("maBanqueComplete");
             if (memoire) {
                 banqueDonnees = JSON.parse(memoire);
-            } else {
-                banqueDonnees = [...banqueParDefaut.repas];
-                localStorage.setItem("maBanqueComplete", JSON.stringify(banqueDonnees));
+                return;
             }
-        } catch(e) {
-            banqueDonnees = [...banqueParDefaut.repas];
-        }
+        } catch(e) {}
+        banqueDonnees = JSON.parse(JSON.stringify(banqueParDefaut));
     }
 
     function ajouterNouveauRepas() {
@@ -172,9 +167,14 @@
     }
 
     function genererMenuComplet() {
-        initialiserBanque();
-        
         let poolBoeuf = melanger(banqueDonnees.filter(r => r.type === "bœuf"));
         let poolPoulet = melanger(banqueDonnees.filter(r => r.type === "poulet"));
         let poolPorc = melanger(banqueDonnees.filter(r => r.type === "porc"));
         let poolPoisson = melanger(banqueDonnees.filter(r => r.type === "poisson"));
+        
+        semaines = [];
+        let utilises = [];
+
+        for (let i = 0; i < 6; i++) {
+            if (poolBoeuf.length === 0) poolBoeuf = melanger(banqueDonnees.filter(r => r.type === "bœuf"));
+            if (poolPoulet.length === 0) poolPoulet = melanger(banqueDonnees.filter(r => r.type === "poulet"));
