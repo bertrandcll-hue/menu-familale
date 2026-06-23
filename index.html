@@ -9,7 +9,6 @@
         h1 { text-align: center; color: #2c3e50; }
         .instruction { text-align: center; color: #7f8c8d; margin-bottom: 25px; font-size: 14px; }
         
-        /* Section Ajouter un repas */
         .ajout-section {
             background: #ebf5fb; padding: 15px; border-radius: 8px; margin: 20px auto;
             max-width: 650px; border: 1px solid #a9cce3; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center;
@@ -61,7 +60,6 @@
     <h1>Planificateur de Soupers de Semaine 🍽️</h1>
     <p class="instruction">Modifiez la catégorie ou utilisez le menu orange pour échanger un repas avec un extra.</p>
     
-    <!-- Section Ajouter un repas -->
     <div class="ajout-section">
         <input type="text" id="nouveauRepasNom" placeholder="Nom du repas (ex: Vol-au-vent)">
         <select id="nouveauRepasProteine">
@@ -76,7 +74,6 @@
     
     <div id="menu-grid" class="grid"></div>
 
-    <!-- Section Extras -->
     <div class="card card-extra">
         <h3>Repas en extra (Disponibles pour remplacement)</h3>
         <p style="font-size: 13px; color: #666; margin-bottom: 5px;">Ces repas sont actuellement exclus du calendrier :</p>
@@ -84,82 +81,59 @@
     </div>
 </div>
 
-<!-- Fenêtre Recette -->
 <div id="box" class="modal">
     <div class="modal-box">
         <button class="btn-close" onclick="fermer()">Fermer</button>
         <h2 id="titre" style="margin-top: 0; color: #2c3e50;">Recette</h2>
-        <textarea id="texte" placeholder="Écrivez les ingrédients et les instructions ici..."></textarea>
+        <textarea id="texte" placeholder="Écrivez les ingrédients..."></textarea>
         <br><br>
         <button class="btn" onclick="sauver()">Sauvegarder la recette</button>
     </div>
 </div>
 
 <script>
-    // Grille stable de base qui s'affiche sans calcul au démarrage
     let semaines = [
-        [ {type: "bœuf", nom: "Pâté chinois"}, {type: "poulet", nom: "Poulet entier"}, {type: "porc", nom: "Belogne rôti"}, {type: "poisson", nom: "Poke Bowl"} ],
-        [ {type: "bœuf", nom: "Sloppy Joe"}, {type: "poulet", nom: "Général Tao"}, {type: "porc", nom: "Patate au jambon"}, {type: "poisson", nom: "Filet de poisson pané"} ],
-        [ {type: "bœuf", nom: "Steak haché en sauce"}, {type: "poulet", nom: "Burger poulet"}, {type: "porc", nom: "Filet de porc"}, {type: "poisson", nom: "Guedille thon"} ],
-        [ {type: "bœuf", nom: "Boulette M&M"}, {type: "poulet", nom: "Fajitas"}, {type: "porc", nom: "Saucisses dans le sirop"}, {type: "poisson", nom: "Casserole de thon"} ],
-        [ {type: "pâte", nom: "Spaghetti"}, {type: "poulet", nom: "Poulet rouge"}, {type: "porc", nom: "Épaule de porc"}, {type: "poisson", nom: "Macaroni à la viande"} ],
-        [ {type: "bœuf", nom: "Pâte au boeuf à la coréenne"}, {type: "poulet", nom: "Poulet Parmigiana"}, {type: "pâte", nom: "Pâte Carbonara"}, {type: "pâte", nom: "Mac & Cheese"} ]
+        [ {type: "b\u0153uf", nom: "P\u00e2t\u00e9 chinois"}, {type: "poulet", nom: "Poulet entier"}, {type: "porc", nom: "Belogne r\u00f4ti"}, {type: "poisson", nom: "Poke Bowl"} ],
+        [ {type: "b\u0153uf", nom: "Sloppy Joe"}, {type: "poulet", nom: "G\u00e9n\u00e9ral Tao"}, {type: "porc", nom: "Patate au jambon"}, {type: "poisson", nom: "Filet de poisson pan\u00e9"} ],
+        [ {type: "b\u0153uf", nom: "Steak hach\u00e9 en sauce"}, {type: "poulet", nom: "Burger poulet"}, {type: "porc", nom: "Filet de porc"}, {type: "poisson", nom: "Guedille thon"} ],
+        [ {type: "b\u0153uf", nom: "Boulette M&M"}, {type: "poulet", nom: "Fajitas"}, {type: "porc", nom: "Saucisses dans le sirop"}, {type: "poisson", nom: "Casserole de thon"} ],
+        [ {type: "p\u00e2te", nom: "Spaghetti"}, {type: "poulet", nom: "Poulet rouge"}, {type: "porc", nom: "\u00c9paule de porc"}, {type: "poisson", nom: "Macaroni \u00e0 la viande"} ],
+        [ {type: "b\u0153uf", nom: "P\u00e2te au boeuf \u00e0 la cor\u00e9enne"}, {type: "poulet", nom: "Poulet Parmigiana"}, {type: "p\u00e2te", nom: "P\u00e2te Carbonara"}, {type: "p\u00e2te", nom: "Mac & Cheese"} ]
     ];
 
     let extras = [
-        {type: "pâte", nom: "Lasagne"}, {type: "pâte", nom: "Tortellini sauce rosée"}, {type: "poulet", nom: "Club sandwich"}, 
-        {type: "poulet", nom: "Vol-au-vent"}, {type: "bœuf", nom: "Burritos Bowl"}, {type: "bœuf", nom: "Quesedillas"}
+        {type: "p\u00e2te", nom: "Lasagne"}, {type: "p\u00e2te", nom: "Tortellini sauce ros\u00e9e"}, {type: "poulet", nom: "Club sandwich"}, 
+        {type: "poulet", nom: "Vol-au-vent"}, {type: "b\u0153uf", nom: "Burritos Bowl"}, {type: "b\u0153uf", nom: "Quesedillas"}
     ];
 
     let platChoisi = "";
     let recettesSauvegardees = {};
-
-    function initialiserPage() {
-        // Charger les extras personnalisés s'il y en a de sauvegardés
-        try {
-            let memoireExtras = localStorage.getItem("mesExtrasSauves");
-            if (memoireExtras) {
-                extras = JSON.parse(memoireExtras);
-            }
-        } catch(e) {}
-        
-        afficherInterface();
-    }
 
     function ajouterNouveauRepas() {
         let nomInput = document.getElementById("nouveauRepasNom");
         let catSelect = document.getElementById("nouveauRepasProteine");
         let nom = nomInput.value.trim();
         let cat = catSelect.value;
+        if (nom === "") return;
 
-        if (nom === "") {
-            alert("Veuillez inscrire le nom d'un repas.");
-            return;
-        }
-
-        // Ajouter directement dans le tableau des extras
         extras.push({ type: cat, nom: nom });
-
-        try {
-            localStorage.setItem("mesExtrasSauves", JSON.stringify(extras));
-        } catch(e) {}
-
-        alert("'" + nom + "' a été ajouté dans vos extras tout en bas !");
+        try { localStorage.setItem("mesExtrasSauves", JSON.stringify(extras)); } catch(e) {}
+        alert("Ajout\u00e9 !");
         nomInput.value = "";
         afficherInterface();
     }
 
     function afficherInterface() {
         let gridHtml = "";
-        
         semaines.forEach((semaine, sIdx) => {
             gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
             semaine.forEach((repas, rIdx) => {
+                let nomEscaped = repas.nom.replace(/'/g, "\\'");
                 gridHtml += '  <div class="repas-block">';
                 gridHtml += '    <div class="repas-header">';
                 gridHtml += '      <div class="repas-controles">';
                 gridHtml += '        <select class="select-cat" onchange="changerCategorie(' + sIdx + ',' + rIdx + ', this)">';
-                ["bœuf", "poulet", "porc", "poisson", "pâte"].forEach(cat => {
+                ["b\u0153uf", "poulet", "porc", "poisson", "p\u00e2te"].forEach(cat => {
                     let sel = (cat === repas.type) ? "selected" : "";
                     gridHtml += '          <option value="' + cat + '" ' + sel + '>' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</option>';
                 });
@@ -167,5 +141,17 @@
                 gridHtml += '        <span class="type cat-' + repas.type + '">' + repas.type + '</span>';
                 gridHtml += '      </div>';
                 gridHtml += '      <select class="select-echange" onchange="changerRepas(' + sIdx + ',' + rIdx + ', this)">';
-                gridHtml += '        <option value="" disabled selected>Échanger...</option>';
-                extras.forEach((ex, exIdx) => {
+                gridHtml += '        <option value="" disabled selected>\u00c9changer...</option>';
+                extras.forEach((ex, exIdx) => { gridHtml += '        <option value="' + exIdx + '">' + ex.nom + '</option>'; });
+                gridHtml += '      </select>';
+                gridHtml += '    </div>';
+                gridHtml += '    <div class="repas-nom" onclick="ouvrir(\'' + nomEscaped + '\')">' + repas.nom + '</div>';
+                gridHtml += '  </div>';
+            });
+            gridHtml += '</div>';
+        });
+        document.getElementById("menu-grid").innerHTML = gridHtml;
+
+        let extrasHtml = "";
+        extras.forEach(ex => {
+            let exEscaped = ex.nom.replace(/'/g, "\\'");
