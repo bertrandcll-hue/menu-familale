@@ -9,33 +9,33 @@
         h1 { text-align: center; color: #2c3e50; }
         .instruction { text-align: center; color: #7f8c8d; margin-bottom: 25px; font-size: 14px; }
         
-        .ajout-section {
-            background: #ebf5fb; padding: 15px; border-radius: 8px; margin: 20px auto;
-            max-width: 650px; border: 1px solid #a9cce3; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center;
-        }
-        .ajout-section input, .ajout-section select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        .ajout-section input { flex: 1; min-width: 200px; }
-        .btn-ajouter { padding: 10px 15px; background-color: #2980b9; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .btn-ajouter:hover { background-color: #21618c; }
-
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card { background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #ddd; border-top: 4px solid #3498db; }
         .card-extra { border-top: 4px solid #f39c12; background: #fffcf7; }
         h3 { margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         
         .repas-block { background: #f1f7fc; margin: 10px 0; padding: 10px 12px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 5px; }
-        .repas-controles { display: flex; align-items: center; gap: 6px; }
+        .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         
-        .type { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: white; }
+        .type { 
+            font-size: 11px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: white;
+            display: inline-block;
+        }
         .cat-bœuf { background-color: #c0392b; }
         .cat-poulet { background-color: #f1c40f; color: #2c3e50; }
         .cat-porc { background-color: #e67e22; }
         .cat-poisson { background-color: #2980b9; }
         .cat-pâte { background-color: #27ae60; }
 
-        .select-cat { font-size: 11px; padding: 1px 2px; border-radius: 4px; border: 1px solid #bdc3c7; background-color: #fff; color: #33495e; cursor: pointer; }
-        .select-echange { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #f39c12; background-color: #fff8ee; color: #d35400; cursor: pointer; }
+        .select-echange {
+            font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #f39c12;
+            background-color: #fff8ee; color: #d35400; cursor: pointer;
+        }
 
         .repas-nom { color: #2980b9; font-weight: bold; font-size: 15px; margin-top: 5px; cursor: pointer; display: inline-block; }
         .repas-nom:hover { color: #1a5276; text-decoration: underline; }
@@ -58,34 +58,23 @@
 
 <div class="container">
     <h1>Planificateur de Soupers de Semaine 🍽️</h1>
-    <p class="instruction">Modifiez la catégorie ou utilisez le menu orange pour échanger un repas avec un extra.</p>
-    
-    <div class="ajout-section">
-        <input type="text" id="nouveauRepasNom" placeholder="Nom du repas (ex: Vol-au-vent)">
-        <select id="nouveauRepasProteine">
-            <option value="bœuf">Bœuf</option>
-            <option value="poulet">Poulet</option>
-            <option value="porc">Porc</option>
-            <option value="poisson">Poisson</option>
-            <option value="pâte">Pâte</option>
-        </select>
-        <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter à ma banque</button>
-    </div>
+    <p class="instruction">Cliquez sur un repas pour ajuster sa recette. Utilisez le menu à droite pour l'échanger. (Faites <b>Ctrl + P</b> pour imprimer ou enregistrer en PDF).</p>
     
     <div id="menu-grid" class="grid"></div>
 
+    <!-- Section Extras -->
     <div class="card card-extra">
-        <h3>Repas en extra (Disponibles pour remplacement)</h3>
-        <p style="font-size: 13px; color: #666; margin-bottom: 5px;">Ces repas sont actuellement exclus du calendrier :</p>
+        <h3>Repas en extra (Disponibles en réserve)</h3>
         <div id="extras-liste" class="extra-box"></div>
     </div>
 </div>
 
+<!-- Fenêtre Recette -->
 <div id="box" class="modal">
     <div class="modal-box">
         <button class="btn-close" onclick="fermer()">Fermer</button>
         <h2 id="titre" style="margin-top: 0; color: #2c3e50;">Recette</h2>
-        <textarea id="texte" placeholder="Écrivez les ingrédients..."></textarea>
+        <textarea id="texte" placeholder="Écrivez les ingrédients et les instructions ici..."></textarea>
         <br><br>
         <button class="btn" onclick="sauver()">Sauvegarder la recette</button>
     </div>
@@ -93,65 +82,93 @@
 
 <script>
     let semaines = [
-        [ {type: "b\u0153uf", nom: "P\u00e2t\u00e9 chinois"}, {type: "poulet", nom: "Poulet entier"}, {type: "porc", nom: "Belogne r\u00f4ti"}, {type: "poisson", nom: "Poke Bowl"} ],
-        [ {type: "b\u0153uf", nom: "Sloppy Joe"}, {type: "poulet", nom: "G\u00e9n\u00e9ral Tao"}, {type: "porc", nom: "Patate au jambon"}, {type: "poisson", nom: "Filet de poisson pan\u00e9"} ],
-        [ {type: "b\u0153uf", nom: "Steak hach\u00e9 en sauce"}, {type: "poulet", nom: "Burger poulet"}, {type: "porc", nom: "Filet de porc"}, {type: "poisson", nom: "Guedille thon"} ],
-        [ {type: "b\u0153uf", nom: "Boulette M&M"}, {type: "poulet", nom: "Fajitas"}, {type: "porc", nom: "Saucisses dans le sirop"}, {type: "poisson", nom: "Casserole de thon"} ],
-        [ {type: "p\u00e2te", nom: "Spaghetti"}, {type: "poulet", nom: "Poulet rouge"}, {type: "porc", nom: "\u00c9paule de porc"}, {type: "poisson", nom: "Macaroni \u00e0 la viande"} ],
-        [ {type: "b\u0153uf", nom: "P\u00e2te au boeuf \u00e0 la cor\u00e9enne"}, {type: "poulet", nom: "Poulet Parmigiana"}, {type: "p\u00e2te", nom: "P\u00e2te Carbonara"}, {type: "p\u00e2te", nom: "Mac & Cheese"} ]
+        [ {type: "bœuf", nom: "Pâté chinois"}, {type: "poulet", nom: "Poulet entier"}, {type: "porc", nom: "Belogne rôti"}, {type: "poisson", nom: "Poke Bowl"} ],
+        [ {type: "bœuf", nom: "Sloppy Joe"}, {type: "poulet", nom: "Général Tao"}, {type: "porc", nom: "Patate au jambon"}, {type: "poisson", nom: "Filet de poisson pané"} ],
+        [ {type: "bœuf", nom: "Steak haché en sauce"}, {type: "poulet", nom: "Burger poulet"}, {type: "porc", nom: "Filet de porc"}, {type: "poisson", nom: "Guedille thon"} ],
+        [ {type: "bœuf", nom: "Boulette M&M"}, {type: "poulet", nom: "Fajitas"}, {type: "porc", nom: "Saucisses dans le sirop"}, {type: "poisson", nom: "Casserole de thon"} ],
+        [ {type: "pâte", nom: "Spaghetti"}, {type: "poulet", nom: "Poulet rouge"}, {type: "porc", nom: "Épaule de porc"}, {type: "poisson", nom: "Macaroni à la viande"} ],
+        [ {type: "bœuf", nom: "Pâte au boeuf à la coréenne"}, {type: "poulet", nom: "Poulet Parmigiana"}, {type: "pâte", nom: "Pâte Carbonara"}, {type: "pâte", nom: "Mac & Cheese"} ]
     ];
 
     let extras = [
-        {type: "p\u00e2te", nom: "Lasagne"}, {type: "p\u00e2te", nom: "Tortellini sauce ros\u00e9e"}, {type: "poulet", nom: "Club sandwich"}, 
-        {type: "poulet", nom: "Vol-au-vent"}, {type: "b\u0153uf", nom: "Burritos Bowl"}, {type: "b\u0153uf", nom: "Quesedillas"}
+        {type: "pâte", nom: "Lasagne"}, {type: "pâte", nom: "Tortellini sauce rosée"}, {type: "poulet", nom: "Club sandwich"}, 
+        {type: "poulet", nom: "Vol-au-vent"}, {type: "bœuf", nom: "Burritos Bowl"}, {type: "bœuf", nom: "Quesedillas"}
     ];
 
     let platChoisi = "";
     let recettesSauvegardees = {};
 
-    function ajouterNouveauRepas() {
-        let nomInput = document.getElementById("nouveauRepasNom");
-        let catSelect = document.getElementById("nouveauRepasProteine");
-        let nom = nomInput.value.trim();
-        let cat = catSelect.value;
-        if (nom === "") return;
-
-        extras.push({ type: cat, nom: nom });
-        try { localStorage.setItem("mesExtrasSauves", JSON.stringify(extras)); } catch(e) {}
-        alert("Ajout\u00e9 !");
-        nomInput.value = "";
-        afficherInterface();
-    }
-
     function afficherInterface() {
         let gridHtml = "";
+        
         semaines.forEach((semaine, sIdx) => {
-            gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
+            gridHtml += `<div class="card"><h3>Semaine ${sIdx + 1}</h3>`;
             semaine.forEach((repas, rIdx) => {
-                let nomEscaped = repas.nom.replace(/'/g, "\\'");
-                gridHtml += '  <div class="repas-block">';
-                gridHtml += '    <div class="repas-header">';
-                gridHtml += '      <div class="repas-controles">';
-                gridHtml += '        <select class="select-cat" onchange="changerCategorie(' + sIdx + ',' + rIdx + ', this)">';
-                ["b\u0153uf", "poulet", "porc", "poisson", "p\u00e2te"].forEach(cat => {
-                    let sel = (cat === repas.type) ? "selected" : "";
-                    gridHtml += '          <option value="' + cat + '" ' + sel + '>' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</option>';
+                gridHtml += `  <div class="repas-block">`;
+                gridHtml += `    <div class="repas-header">`;
+                gridHtml += `      <span class="type cat-${repas.type}">${repas.type}</span>`;
+                gridHtml += `      <select class="select-echange" onchange="changerRepas(${sIdx}, ${rIdx}, this)">`;
+                gridHtml += `        <option value="" disabled selected>Échanger...</option>`;
+                extras.forEach((ex, exIdx) => {
+                    gridHtml += `        <option value="${exIdx}">${ex.nom}</option>`;
                 });
-                gridHtml += '        </select> ';
-                gridHtml += '        <span class="type cat-' + repas.type + '">' + repas.type + '</span>';
-                gridHtml += '      </div>';
-                gridHtml += '      <select class="select-echange" onchange="changerRepas(' + sIdx + ',' + rIdx + ', this)">';
-                gridHtml += '        <option value="" disabled selected>\u00c9changer...</option>';
-                extras.forEach((ex, exIdx) => { gridHtml += '        <option value="' + exIdx + '">' + ex.nom + '</option>'; });
-                gridHtml += '      </select>';
-                gridHtml += '    </div>';
-                gridHtml += '    <div class="repas-nom" onclick="ouvrir(\'' + nomEscaped + '\')">' + repas.nom + '</div>';
-                gridHtml += '  </div>';
+                gridHtml += `      </select>`;
+                gridHtml += `    </div>`;
+                gridHtml += `    <div class="repas-nom" onclick="ouvrir('${repas.nom.replace(/'/g, "\\'")}')">${repas.nom}</div>`;
+                gridHtml += `  </div>`;
             });
-            gridHtml += '</div>';
+            gridHtml += `</div>`;
         });
         document.getElementById("menu-grid").innerHTML = gridHtml;
 
         let extrasHtml = "";
         extras.forEach(ex => {
-            let exEscaped = ex.nom.replace(/'/g, "\\'");
+            extrasHtml += `<div class="extra-item-wrapper">`;
+            extrasHtml += `  <div class="extra-item" onclick="ouvrir('${ex.nom.replace(/'/g, "\\'")}')">${ex.nom}</div>`;
+            extrasHtml += `  <span class="extra-badge">${ex.type}</span>`;
+            extrasHtml += `</div>`;
+        });
+        document.getElementById("extras-liste").innerHTML = extrasHtml;
+    }
+
+    function changerRepas(semaineIdx, repasIdx, selectElement) {
+        let extraIdx = selectElement.value;
+        if (extraIdx === "") return;
+
+        let ancienRepas = { type: semaines[semaineIdx][repasIdx].type, nom: semaines[semaineIdx][repasIdx].nom };
+        let nouveauRepas = { type: extras[extraIdx].type, nom: extras[extraIdx].nom };
+
+        semaines[semaineIdx][repasIdx] = nouveauRepas;
+        extras[extraIdx] = ancienRepas;
+
+        afficherInterface();
+    }
+
+    function ouvrir(nom) {
+        platChoisi = nom;
+        document.getElementById("titre").innerText = nom;
+        let texteRecette = "";
+        try { texteRecette = localStorage.getItem(nom) || ""; } catch(e) { texteRecette = recettesSauvegardees[nom] || ""; }
+
+        if (texteRecette) {
+            document.getElementById("texte").value = texteRecette;
+        } else {
+            document.getElementById("texte").value = "Ingrédients :\n- \n\nInstructions :\n1. ";
+        }
+        document.getElementById("box").style.display = "block";
+    }
+
+    function fermer() { document.getElementById("box").style.display = "none"; }
+
+    function sauver() {
+        let contenu = document.getElementById("texte").value;
+        try { localStorage.setItem(platChoisi, contenu); } catch(e) {}
+        recettesSauvegardees[platChoisi] = contenu;
+        alert("La recette pour '" + platChoisi + "' a été mémorisée !");
+        fermer();
+    }
+
+    window.onload = afficherInterface;
+</script>
+</body>
+</html>
