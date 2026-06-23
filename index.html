@@ -105,7 +105,6 @@
 </div>
 
 <script>
-    // Banque de base (utilisée au premier chargement)
     const banqueParDefaut = {
         repas: [
             {type: "bœuf", nom: "Pâté chinois"}, {type: "bœuf", nom: "Sloppy Joe"}, {type: "bœuf", nom: "Steak haché en sauce"}, 
@@ -159,14 +158,8 @@
             localStorage.setItem("maBanqueComplete", JSON.stringify(banqueDonnees));
         } catch(e) {}
 
-        alert("'" + nom + "' a été enregistré avec succès dans la catégorie [" + cat + "] !");
+        alert("'" + nom + "' a été enregistré dans la catégorie [" + cat + "] ! Cliquez sur Générer pour l'inclure.");
         nomInput.value = "";
-        
-        // Mettre les nouveaux extras à jour visuellement sans tout mélanger
-        if (!extras.some(e => e.nom === nom)) {
-            extras.push(nouveauPlat);
-            afficherInterface();
-        }
     }
 
     function melanger(array) {
@@ -179,5 +172,9 @@
     }
 
     function genererMenuComplet() {
-        // Filtrer la banque de données globale
+        initialiserBanque();
+        
         let poolBoeuf = melanger(banqueDonnees.filter(r => r.type === "bœuf"));
+        let poolPoulet = melanger(banqueDonnees.filter(r => r.type === "poulet"));
+        let poolPorc = melanger(banqueDonnees.filter(r => r.type === "porc"));
+        let poolPoisson = melanger(banqueDonnees.filter(r => r.type === "poisson"));
