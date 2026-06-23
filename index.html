@@ -6,36 +6,45 @@
     <style>
         body { font-family: sans-serif; background-color: #f0f4f8; padding: 20px; color: #333; }
         .container { max-width: 1100px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
         .instruction { text-align: center; color: #7f8c8d; margin-bottom: 25px; font-size: 14px; }
         
+        /* Section Ajouter un repas */
+        .ajout-section {
+            background: #ebf5fb; padding: 15px; border-radius: 8px; margin: 20px auto;
+            max-width: 650px; border: 1px solid #a9cce3; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center;
+        }
+        .ajout-section input, .ajout-section select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .ajout-section input { flex: 1; min-width: 200px; }
+        .btn-ajouter { padding: 10px 15px; background-color: #2980b9; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-ajouter:hover { background-color: #21618c; }
+
+        .btn-generer {
+            display: block; width: 100%; max-width: 400px; margin: 20px auto 30px auto; padding: 15px;
+            background-color: #27ae60; color: white; border: none; border-radius: 8px; font-size: 18px;
+            font-weight: bold; cursor: pointer; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-generer:hover { background-color: #219653; }
+
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card { background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #ddd; border-top: 4px solid #3498db; }
         .card-extra { border-top: 4px solid #f39c12; background: #fffcf7; }
         h3 { margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         
         .repas-block { background: #f1f7fc; margin: 10px 0; padding: 10px 12px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 5px; }
+        .repas-controles { display: flex; align-items: center; gap: 6px; }
         
-        .type { 
-            font-size: 11px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            padding: 3px 8px;
-            border-radius: 4px;
-            color: white;
-            display: inline-block;
-        }
+        /* Style des étiquettes de catégories dynamiques */
+        .type { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: white; }
         .cat-bœuf { background-color: #c0392b; }
         .cat-poulet { background-color: #f1c40f; color: #2c3e50; }
         .cat-porc { background-color: #e67e22; }
         .cat-poisson { background-color: #2980b9; }
         .cat-pâte { background-color: #27ae60; }
 
-        .select-echange {
-            font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #f39c12;
-            background-color: #fff8ee; color: #d35400; cursor: pointer;
-        }
+        .select-cat { font-size: 11px; padding: 1px 2px; border-radius: 4px; border: 1px solid #bdc3c7; background-color: #fff; color: #33495e; cursor: pointer; }
+        .select-echange { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #f39c12; background-color: #fff8ee; color: #d35400; cursor: pointer; }
 
         .repas-nom { color: #2980b9; font-weight: bold; font-size: 15px; margin-top: 5px; cursor: pointer; display: inline-block; }
         .repas-nom:hover { color: #1a5276; text-decoration: underline; }
@@ -58,7 +67,22 @@
 
 <div class="container">
     <h1>Planificateur de Soupers de Semaine 🍽️</h1>
-    <p class="instruction">Cliquez sur un repas pour ajuster sa recette. Utilisez le menu à droite pour l'échanger. (Faites <b>Ctrl + P</b> pour imprimer ou enregistrer en PDF).</p>
+    <p class="instruction">Modifiez la catégorie ou utilisez le menu orange pour échanger un repas avec un extra.</p>
+    
+    <!-- Formulaire d'ajout sécurisé -->
+    <div class="ajout-section">
+        <input type="text" id="nouveauRepasNom" placeholder="Nom du nouveau repas (ex: Vol-au-vent)">
+        <select id="nouveauRepasProteine">
+            <option value="bœuf">Bœuf</option>
+            <option value="poulet">Poulet</option>
+            <option value="porc">Porc</option>
+            <option value="poisson">Poisson</option>
+            <option value="pâte">Pâte</option>
+        </select>
+        <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter à ma banque</button>
+    </div>
+
+    <button class="btn-generer" onclick="genererMenuComplet()">🔄 Générer un nouveau menu complet</button>
     
     <div id="menu-grid" class="grid"></div>
 
@@ -81,94 +105,79 @@
 </div>
 
 <script>
-    let semaines = [
-        [ {type: "bœuf", nom: "Pâté chinois"}, {type: "poulet", nom: "Poulet entier"}, {type: "porc", nom: "Belogne rôti"}, {type: "poisson", nom: "Poke Bowl"} ],
-        [ {type: "bœuf", nom: "Sloppy Joe"}, {type: "poulet", nom: "Général Tao"}, {type: "porc", nom: "Patate au jambon"}, {type: "poisson", nom: "Filet de poisson pané"} ],
-        [ {type: "bœuf", nom: "Steak haché en sauce"}, {type: "poulet", nom: "Burger poulet"}, {type: "porc", nom: "Filet de porc"}, {type: "poisson", nom: "Guedille thon"} ],
-        [ {type: "bœuf", nom: "Boulette M&M"}, {type: "poulet", nom: "Fajitas"}, {type: "porc", nom: "Saucisses dans le sirop"}, {type: "poisson", nom: "Casserole de thon"} ],
-        [ {type: "pâte", nom: "Spaghetti"}, {type: "poulet", nom: "Poulet rouge"}, {type: "porc", nom: "Épaule de porc"}, {type: "poisson", nom: "Macaroni à la viande"} ],
-        [ {type: "bœuf", nom: "Pâte au boeuf à la coréenne"}, {type: "poulet", nom: "Poulet Parmigiana"}, {type: "pâte", nom: "Pâte Carbonara"}, {type: "pâte", nom: "Mac & Cheese"} ]
-    ];
+    // Banque de base (utilisée au premier chargement)
+    const banqueParDefaut = {
+        repas: [
+            {type: "bœuf", nom: "Pâté chinois"}, {type: "bœuf", nom: "Sloppy Joe"}, {type: "bœuf", nom: "Steak haché en sauce"}, 
+            {type: "bœuf", nom: "Boulette M&M"}, {type: "pâte", nom: "Spaghetti"}, {type: "bœuf", nom: "Pâte au boeuf à la coréenne"},
+            {type: "poulet", nom: "Poulet entier"}, {type: "poulet", nom: "Général Tao"}, {type: "poulet", nom: "Burger poulet"}, 
+            {type: "poulet", nom: "Fajitas"}, {type: "poulet", nom: "Poulet rouge"}, {type: "poulet", nom: "Poulet Parmigiana"},
+            {type: "porc", nom: "Belogne rôti"}, {type: "porc", nom: "Patate au jambon"}, {type: "porc", nom: "Filet de porc"}, 
+            {type: "porc", nom: "Saucisses dans le sirop"}, {type: "porc", nom: "Épaule de porc"}, {type: "pâte", nom: "Pâte Carbonara"},
+            {type: "poisson", nom: "Poke Bowl"}, {type: "poisson", nom: "Filet de poisson pané"}, {type: "poisson", nom: "Guedille thon"}, 
+            {type: "poisson", nom: "Casserole de thon"}, {type: "poisson", nom: "Macaroni à la viande"}, {type: "pâte", nom: "Mac & Cheese"},
+            {type: "pâte", nom: "Lasagne"}, {type: "pâte", nom: "Tortellini sauce rosée"}, {type: "poulet", nom: "Club sandwich"}, 
+            {type: "poulet", nom: "Vol-au-vent"}, {type: "bœuf", nom: "Burritos Bowl"}, {type: "bœuf", nom: "Quesedillas"}
+        ]
+    };
 
-    let extras = [
-        {type: "pâte", nom: "Lasagne"}, {type: "pâte", nom: "Tortellini sauce rosée"}, {type: "poulet", nom: "Club sandwich"}, 
-        {type: "poulet", nom: "Vol-au-vent"}, {type: "bœuf", nom: "Burritos Bowl"}, {type: "bœuf", nom: "Quesedillas"}
-    ];
-
+    let banqueDonnees = [];
+    let semaines = [];
+    let extras = [];
     let platChoisi = "";
     let recettesSauvegardees = {};
 
-    function afficherInterface() {
-        let gridHtml = "";
-        
-        semaines.forEach((semaine, sIdx) => {
-            gridHtml += `<div class="card"><h3>Semaine ${sIdx + 1}</h3>`;
-            semaine.forEach((repas, rIdx) => {
-                gridHtml += `  <div class="repas-block">`;
-                gridHtml += `    <div class="repas-header">`;
-                gridHtml += `      <span class="type cat-${repas.type}">${repas.type}</span>`;
-                gridHtml += `      <select class="select-echange" onchange="changerRepas(${sIdx}, ${rIdx}, this)">`;
-                gridHtml += `        <option value="" disabled selected>Échanger...</option>`;
-                extras.forEach((ex, exIdx) => {
-                    gridHtml += `        <option value="${exIdx}">${ex.nom}</option>`;
-                });
-                gridHtml += `      </select>`;
-                gridHtml += `    </div>`;
-                gridHtml += `    <div class="repas-nom" onclick="ouvrir('${repas.nom.replace(/'/g, "\\'")}')">${repas.nom}</div>`;
-                gridHtml += `  </div>`;
-            });
-            gridHtml += `</div>`;
-        });
-        document.getElementById("menu-grid").innerHTML = gridHtml;
-
-        let extrasHtml = "";
-        extras.forEach(ex => {
-            extrasHtml += `<div class="extra-item-wrapper">`;
-            extrasHtml += `  <div class="extra-item" onclick="ouvrir('${ex.nom.replace(/'/g, "\\'")}')">${ex.nom}</div>`;
-            extrasHtml += `  <span class="extra-badge">${ex.type}</span>`;
-            extrasHtml += `</div>`;
-        });
-        document.getElementById("extras-liste").innerHTML = extrasHtml;
-    }
-
-    function changerRepas(semaineIdx, repasIdx, selectElement) {
-        let extraIdx = selectElement.value;
-        if (extraIdx === "") return;
-
-        let ancienRepas = { type: semaines[semaineIdx][repasIdx].type, nom: semaines[semaineIdx][repasIdx].nom };
-        let nouveauRepas = { type: extras[extraIdx].type, nom: extras[extraIdx].nom };
-
-        semaines[semaineIdx][repasIdx] = nouveauRepas;
-        extras[extraIdx] = ancienRepas;
-
-        afficherInterface();
-    }
-
-    function ouvrir(nom) {
-        platChoisi = nom;
-        document.getElementById("titre").innerText = nom;
-        let texteRecette = "";
-        try { texteRecette = localStorage.getItem(nom) || ""; } catch(e) { texteRecette = recettesSauvegardees[nom] || ""; }
-
-        if (texteRecette) {
-            document.getElementById("texte").value = texteRecette;
-        } else {
-            document.getElementById("texte").value = "Ingrédients :\n- \n\nInstructions :\n1. ";
+    function initialiserBanque() {
+        try {
+            let memoire = localStorage.getItem("maBanqueComplete");
+            if (memoire) {
+                banqueDonnees = JSON.parse(memoire);
+            } else {
+                banqueDonnees = [...banqueParDefaut.repas];
+                localStorage.setItem("maBanqueComplete", JSON.stringify(banqueDonnees));
+            }
+        } catch(e) {
+            banqueDonnees = [...banqueParDefaut.repas];
         }
-        document.getElementById("box").style.display = "block";
     }
 
-    function fermer() { document.getElementById("box").style.display = "none"; }
+    function ajouterNouveauRepas() {
+        let nomInput = document.getElementById("nouveauRepasNom");
+        let catSelect = document.getElementById("nouveauRepasProteine");
+        let nom = nomInput.value.trim();
+        let cat = catSelect.value;
 
-    function sauver() {
-        let contenu = document.getElementById("texte").value;
-        try { localStorage.setItem(platChoisi, contenu); } catch(e) {}
-        recettesSauvegardees[platChoisi] = contenu;
-        alert("La recette pour '" + platChoisi + "' a été mémorisée !");
-        fermer();
+        if (nom === "") {
+            alert("Veuillez donner un nom à votre repas.");
+            return;
+        }
+
+        let nouveauPlat = { type: cat, nom: nom };
+        banqueDonnees.push(nouveauPlat);
+
+        try {
+            localStorage.setItem("maBanqueComplete", JSON.stringify(banqueDonnees));
+        } catch(e) {}
+
+        alert("'" + nom + "' a été enregistré avec succès dans la catégorie [" + cat + "] !");
+        nomInput.value = "";
+        
+        // Mettre les nouveaux extras à jour visuellement sans tout mélanger
+        if (!extras.some(e => e.nom === nom)) {
+            extras.push(nouveauPlat);
+            afficherInterface();
+        }
     }
 
-    window.onload = afficherInterface;
-</script>
-</body>
-</html>
+    function melanger(array) {
+        let copie = [...array];
+        for (let i = copie.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copie[i], copie[j]] = [copie[j], copie[i]];
+        }
+        return copie;
+    }
+
+    function genererMenuComplet() {
+        // Filtrer la banque de données globale
+        let poolBoeuf = melanger(banqueDonnees.filter(r => r.type === "bœuf"));
