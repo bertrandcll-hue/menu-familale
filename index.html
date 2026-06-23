@@ -9,7 +9,6 @@
         h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
         .instruction { text-align: center; color: #7f8c8d; margin-bottom: 25px; font-size: 14px; }
         
-        /* Section Ajouter un repas */
         .ajout-section {
             background: #ebf5fb; padding: 15px; border-radius: 8px; margin: 20px auto;
             max-width: 650px; border: 1px solid #a9cce3; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center;
@@ -35,7 +34,6 @@
         .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 5px; }
         .repas-controles { display: flex; align-items: center; gap: 6px; }
         
-        /* Style des étiquettes de catégories dynamiques */
         .type { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: white; }
         .cat-bœuf { background-color: #c0392b; }
         .cat-poulet { background-color: #f1c40f; color: #2c3e50; }
@@ -69,7 +67,6 @@
     <h1>Planificateur de Soupers de Semaine 🍽️</h1>
     <p class="instruction">Modifiez la catégorie ou utilisez le menu orange pour échanger un repas avec un extra.</p>
     
-    <!-- Formulaire d'ajout sécurisé -->
     <div class="ajout-section">
         <input type="text" id="nouveauRepasNom" placeholder="Nom du nouveau repas (ex: Vol-au-vent)">
         <select id="nouveauRepasProteine">
@@ -86,14 +83,12 @@
     
     <div id="menu-grid" class="grid"></div>
 
-    <!-- Section Extras -->
     <div class="card card-extra">
         <h3>Repas en extra (Disponibles en réserve)</h3>
         <div id="extras-liste" class="extra-box"></div>
     </div>
 </div>
 
-<!-- Fenêtre Recette -->
 <div id="box" class="modal">
     <div class="modal-box">
         <button class="btn-close" onclick="fermer()">Fermer</button>
@@ -153,7 +148,7 @@
             localStorage.setItem("maBanqueComplete", JSON.stringify(banqueDonnees));
         } catch(e) {}
 
-        alert("'" + nom + "' a été enregistré dans la catégorie [" + cat + "] ! Cliquez sur Générer pour l'inclure.");
+        alert("'" + nom + "' enregistré ! Cliquez sur Générer pour l'inclure.");
         nomInput.value = "";
     }
 
@@ -178,3 +173,4 @@
         for (let i = 0; i < 6; i++) {
             if (poolBoeuf.length === 0) poolBoeuf = melanger(banqueDonnees.filter(r => r.type === "bœuf"));
             if (poolPoulet.length === 0) poolPoulet = melanger(banqueDonnees.filter(r => r.type === "poulet"));
+            if (poolPorc.length === 0) poolPorc = melanger(banqueDonnees.filter(r => r.type === "porc"));
