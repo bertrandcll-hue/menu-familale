@@ -54,7 +54,7 @@
         
         .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
     </style>
-    <!-- Script d'intégration officiel Supabase en version CDN standardisée -->
+    <!-- Script d'intégration officiel Supabase stable -->
     <script src="https://jsdelivr.net"></script>
 </head>
 <body>
@@ -96,7 +96,7 @@
 
 <script>
     const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
+    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI"; 
 
     let _supabase;
     let semaines = [];
@@ -107,7 +107,6 @@
         try {
             document.getElementById("loading").style.display = "block";
             
-            // Lancement des requêtes de diagnostic
             let responseMenu = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
             if (responseMenu.error) {
                 alert("Erreur de lecture de la table 'semaines_plan' : " + responseMenu.error.message);
@@ -142,7 +141,6 @@
         let catSelect = document.getElementById("nouveauRepasProteine");
         let nom = nomInput.value.trim();
         let cat = catSelect.value;
-
         if (nom === "") return;
 
         let { error } = await _supabase.from('extras_reserve').insert([{ repas_nom: nom, proteine_type: cat }]);
@@ -193,3 +191,4 @@
 
     async function sauver() {
         let contenu = document.getElementById("texte").value;
+        await _supabase.from('recettes_famille').upsert({ repas_nom: platChoisi, texte: contenu }, { onConflict: 'repas_nom' });
