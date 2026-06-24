@@ -54,7 +54,8 @@
         
         .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
     </style>
-    <script src="https://jsdelivr.net"></script>
+    <!-- LIEN DE BIBLIOTHÈQUE SÉCURISÉ POUR COMPATIBILITÉ BROWSER UNIVERSELLE -->
+    <script src="https://unpkg.com"></script>
 </head>
 <body>
 
@@ -95,7 +96,7 @@
 
 <script>
     const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI"; 
+    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
 
     let _supabase;
     let semaines = [];
@@ -190,4 +191,3 @@
                 let nomEscaped = repas.nom.replace(/'/g, "\\'");
                 gridHtml += '  <div class="repas-block">';
                 gridHtml += '    <div class="repas-header">';
-                gridHtml += '      <div class="repas-controles">';
