@@ -8,61 +8,41 @@
         .container { max-width: 1100px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #2c3e50; }
         .instruction { text-align: center; color: #7f8c8d; margin-bottom: 25px; font-size: 14px; }
-        
-        .ajout-section {
-            background: #ebf5fb; padding: 15px; border-radius: 8px; margin: 20px auto;
-            max-width: 650px; border: 1px solid #a9cce3; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center;
-        }
+        .ajout-section { background: #ebf5fb; padding: 15px; border-radius: 8px; margin: 20px auto; max-width: 650px; border: 1px solid #a9cce3; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
         .ajout-section input, .ajout-section select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .ajout-section input { flex: 1; min-width: 200px; }
         .btn-ajouter { padding: 10px 15px; background-color: #2980b9; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .btn-ajouter:hover { background-color: #21618c; }
-
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card { background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #ddd; border-top: 4px solid #3498db; }
         .card-extra { border-top: 4px solid #f39c12; background: #fffcf7; }
         h3 { margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        
         .repas-block { background: #f1f7fc; margin: 10px 0; padding: 10px 12px; border-radius: 6px; }
         .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 5px; }
-        .repas-controles { display: flex; align-items: center; gap: 6px; }
-        
         .type { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: white; }
         .cat-bœuf { background-color: #c0392b; }
         .cat-poulet { background-color: #f1c40f; color: #2c3e50; }
         .cat-porc { background-color: #e67e22; }
         .cat-poisson { background-color: #2980b9; }
         .cat-pâte { background-color: #27ae60; }
-
-        .select-cat { font-size: 11px; padding: 1px 2px; border-radius: 4px; border: 1px solid #bdc3c7; background-color: #fff; color: #33495e; cursor: pointer; }
-        .select-echange { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #f39c12; background-color: #fff8ee; color: #d35400; cursor: pointer; }
-        
-        .repas-nom { color: #2980b9; font-weight: bold; font-size: 15px; margin-top: 5px; cursor: pointer; display: inline-block; }
-        .repas-nom:hover { color: #1a5276; text-decoration: underline; }
-        
+        .select-cat, .select-echange { font-size: 11px; padding: 2px; border-radius: 4px; border: 1px solid #bdc3c7; cursor: pointer; }
+        .repas-nom { color: #2980b9; font-weight: bold; font-size: 15px; margin-top: 5px; cursor: pointer; }
         .extra-box { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
         .extra-item-wrapper { display: flex; flex-direction: column; gap: 4px; background: #fff3e0; padding: 10px; border-radius: 6px; text-align: center; }
         .extra-item { color: #e65100; font-weight: bold; cursor: pointer; }
-        .extra-badge { font-size: 9px; text-transform: uppercase; font-weight: bold; color: #7f8c8d; margin-top: 2px; }
-
+        .extra-badge { font-size: 9px; text-transform: uppercase; font-weight: bold; color: #7f8c8d; }
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
         .modal-box { background: white; margin: 12% auto; padding: 25px; width: 85%; max-width: 500px; border-radius: 10px; }
         textarea { width: 100%; height: 200px; margin-top: 12px; padding: 10px; box-sizing: border-box; }
         .btn { padding: 10px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .btn:hover { background: #219653; }
-        .btn-close { background: #95a5a6; float: right; padding: 6px 12px; border: none; color: white; border-radius: 4px; cursor: pointer; }
-        
+        .btn-close { background: #95a5a6; float: right; padding: 6px 12px; color: white; border: none; border-radius: 4px; }
         .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
     </style>
-    <!-- CHARGEMENT DE LA BIBLIOTHÈQUE COMPATIBLE EN VERSION UNIVERSELLE STANDARDISEE -->
-    <script src="https://cloudflare.com"></script>
+    <!-- Chargement de secours officiel par un autre serveur CDN (jsDelivr) -->
+    <script src="https://jsdelivr.net"></script>
 </head>
 <body>
-
 <div class="container">
     <h1>Planificateur de Soupers de Famille 🍽️</h1>
-    <p class="instruction">Modifiez la catégorie d'un plat ou utilisez le menu orange à droite pour faire un échange avec un extra.</p>
-    
     <div class="ajout-section">
         <input type="text" id="nouveauRepasNom" placeholder="Nom du repas (ex: Vol-au-vent)">
         <select id="nouveauRepasProteine">
@@ -74,123 +54,97 @@
         </select>
         <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter à la base de données</button>
     </div>
-    
-    <div id="loading" class="loading-text">🔄 Connexion à la base de données en direct...</div>
+    <div id="loading" class="loading-text">🔄 Connexion à Supabase...</div>
     <div id="menu-grid" class="grid"></div>
-
     <div class="card card-extra">
-        <h3>Repas en extra (Disponibles pour remplacement)</h3>
+        <h3>Repas en extra</h3>
         <div id="extras-liste" class="extra-box"></div>
     </div>
 </div>
-
 <div id="box" class="modal">
     <div class="modal-box">
         <button class="btn-close" onclick="fermer()">Fermer</button>
-        <h2 id="titre" style="margin-top: 0; color: #2c3e50;">Recette</h2>
-        <textarea id="texte" placeholder="Écrivez les ingrédients..."></textarea>
-        <br><br>
-        <button class="btn" onclick="sauver()">Sauvegarder pour toute la famille</button>
+        <h2 id="titre">Recette</h2>
+        <textarea id="texte"></textarea><br><br>
+        <button class="btn" onclick="sauver()">Sauvegarder pour la famille</button>
     </div>
 </div>
-
 <script>
-    const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
-const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
+    const SUPABASE_URL = "https://supabase.co";
+    // RECOPIEZ VOTRE CLÉ PUBLIQUE COMPLETE (AVEC LE SB_PUBLISHABLE_...) ENTRE LES GUILLEMETS CI-DESSOUS :
+    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI"; 
 
-    // Initialisation directe sécurisée
-    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    let semaines = [];
-    let extras = [];
-    let platChoisi = "";
+    let _supabase; let semaines = []; let extras = []; let platChoisi = "";
 
     async function connecterEtCharger() {
-        try {
-            document.getElementById("loading").style.display = "block";
-            
-            let responseMenu = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
-            let responseExtras = await _supabase.from('extras_reserve').select('*');
-
-            if (responseMenu.error || responseExtras.error) {
-                alert("Erreur Supabase : " + (responseMenu.error?.message || responseExtras.error?.message));
-                return;
-            }
-
-            let menuData = responseMenu.data;
-            let extrasData = responseExtras.data;
-
-            semaines = [ [], [], [], [], [], [] ];
-            menuData.forEach(row => {
-                semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom });
-            });
-
-            extras = extrasData ? extrasData.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
-
-            document.getElementById("loading").style.display = "none";
-            afficherInterface();
-        } catch(err) {
-            alert("Erreur réseau : " + err.message);
-        }
+        document.getElementById("loading").style.display = "block";
+        let { data: menuData } = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
+        let { data: extrasData } = await _supabase.from('extras_reserve').select('*');
+        
+        semaines = [ [], [], [], [], [], [] ];
+        menuData.forEach(row => { semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom }); });
+        extras = extrasData ? extrasData.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
+        document.getElementById("loading").style.display = "none";
+        afficherInterface();
     }
 
     async function ajouterNouveauRepas() {
-        let nomInput = document.getElementById("nouveauRepasNom");
-        let catSelect = document.getElementById("nouveauRepasProteine");
-        let nom = nomInput.value.trim();
-        let cat = catSelect.value;
+        let nom = document.getElementById("nouveauRepasNom").value.trim();
+        let cat = document.getElementById("nouveauRepasProteine").value;
         if (nom === "") return;
-
-        let { error } = await _supabase.from('extras_reserve').insert([{ repas_nom: nom, proteine_type: cat }]);
-        if (error) {
-            alert("Impossible d'ajouter : " + error.message);
-            return;
-        }
-        
-        alert("'" + nom + "' sauvegardé !");
-        nomInput.value = "";
+        await _supabase.from('extras_reserve').insert([{ repas_nom: nom, proteine_type: cat }]);
+        document.getElementById("nouveauRepasNom").value = "";
         connecterEtCharger();
     }
 
     async function changerCategorie(semaineIdx, repasIdx, selectElement) {
-        let nouvelleCat = selectElement.value;
-        await _supabase.from('semaines_plan')
-            .update({ proteine_type: nouvelleCat })
-            .match({ semaine_num: semaineIdx + 1, repas_index: repasIdx });
-
+        await _supabase.from('semaines_plan').update({ proteine_type: selectElement.value }).match({ semaine_num: semaineIdx + 1, repas_index: repasIdx });
         connecterEtCharger();
     }
 
     async function changerRepas(semaineIdx, repasIdx, selectElement) {
-        let extraIdx = selectElement.value;
-        if (extraIdx === "") return;
-
-        let repasMenuActuel = semaines[semaineIdx][repasIdx];
-        let repasExtraChoisi = extras[extraIdx];
-
-        await _supabase.from('semaines_plan')
-            .update({ repas_nom: repasExtraChoisi.nom, proteine_type: repasExtraChoisi.type })
-            .match({ semaine_num: semaineIdx + 1, repas_index: repasIdx });
-
-        await _supabase.from('extras_reserve')
-            .update({ repas_nom: repasMenuActuel.nom, proteine_type: repasMenuActuel.type })
-            .match({ repas_nom: repasExtraChoisi.nom });
-
+        let extraIdx = selectElement.value; if (extraIdx === "") return;
+        let repasMenuActuel = semaines[semaineIdx][repasIdx]; let repasExtraChoisi = extras[extraIdx];
+        await _supabase.from('semaines_plan').update({ repas_nom: repasExtraChoisi.nom, proteine_type: repasExtraChoisi.type }).match({ semaine_num: semaineIdx + 1, repas_index: repasIdx });
+        await _supabase.from('extras_reserve').update({ repas_nom: repasMenuActuel.nom, proteine_type: repasMenuActuel.type }).match({ repas_nom: repasExtraChoisi.nom });
         connecterEtCharger();
     }
 
     async function ouvrir(nom) {
-        platChoisi = nom;
-        document.getElementById("titre").innerText = nom;
+        platChoisi = nom; document.getElementById("titre").innerText = nom;
         let { data } = await _supabase.from('recettes_famille').select('texte').eq('repas_nom', nom).single();
         document.getElementById("texte").value = data ? data.texte : "Ingrédients :\n- \n\nInstructions :\n1. ";
         document.getElementById("box").style.display = "block";
     }
 
     async function sauver() {
-        let contenu = document.getElementById("texte").value;
-        await _supabase.from('recettes_famille').upsert({ repas_nom: platChoisi, texte: contenu }, { onConflict: 'repas_nom' });
-        alert("Recette synchronisée !");
+        await _supabase.from('recettes_famille').upsert({ repas_nom: platChoisi, texte: document.getElementById("texte").value }, { onConflict: 'repas_nom' });
         fermer();
     }
 
+    function fermer() { document.getElementById("box").style.display = "none"; }
+
+    function afficherInterface() {
+        let gridHtml = "";
+        semaines.forEach((semaine, sIdx) => {
+            gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
+            semaine.forEach((repas, rIdx) => {
+                let nomEscaped = repas.nom.replace(/'/g, "\\'");
+                gridHtml += '  <div class="repas-block"><div class="repas-header"><div class="repas-controles"><select class="select-cat" onchange="changerCategorie(' + sIdx + ',' + rIdx + ', this)">';
+                ["bœuf", "poulet", "porc", "poisson", "pâte"].forEach(cat => {
+                    let sel = (cat === repas.type) ? "selected" : "";
+                    gridHtml += '          <option value="' + cat + '" ' + sel + '>' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</option>';
+                });
+                gridHtml += '        </select> <span class="type cat-' + repas.type + '">' + repas.type + '</span></div>';
+                gridHtml += '      <select class="select-echange" onchange="changerRepas(' + sIdx + ',' + rIdx + ', this)"><option value="" disabled selected>Échanger...</option>';
+                extras.forEach((ex, exIdx) => { gridHtml += '        <option value="' + exIdx + '">' + ex.nom + '</option>'; });
+                gridHtml += '      </select></div><div class="repas-nom" onclick="ouvrir(\'' + nomEscaped + '\')">' + repas.nom + '</div></div>';
+            });
+            gridHtml += '</div>';
+        });
+        document.getElementById("menu-grid").innerHTML = gridHtml;
+        let extrasHtml = "";
+        extras.forEach(ex => {
+            let exEscaped = ex.nom.replace(/'/g, "\\'");
+            extrasHtml += '<div class="extra-item-wrapper"><div class="extra-item" onclick="ouvrir(\'' + exEscaped + '\')">' + ex.nom + '</div><span class="extra-badge">' + ex.type + '</span></div>';
+        });
