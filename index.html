@@ -25,6 +25,7 @@
         
         .repas-block { background: #f1f7fc; margin: 10px 0; padding: 10px 12px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 5px; }
+        .repas-controles { display: flex; align-items: center; gap: 6px; }
         
         .type { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: white; }
         .cat-bœuf { background-color: #c0392b; }
@@ -33,7 +34,9 @@
         .cat-poisson { background-color: #2980b9; }
         .cat-pâte { background-color: #27ae60; }
 
+        .select-cat { font-size: 11px; padding: 1px 2px; border-radius: 4px; border: 1px solid #bdc3c7; background-color: #fff; color: #33495e; cursor: pointer; }
         .select-echange { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #f39c12; background-color: #fff8ee; color: #d35400; cursor: pointer; }
+        
         .repas-nom { color: #2980b9; font-weight: bold; font-size: 15px; margin-top: 5px; cursor: pointer; display: inline-block; }
         .repas-nom:hover { color: #1a5276; text-decoration: underline; }
         
@@ -57,8 +60,9 @@
 
 <div class="container">
     <h1>Planificateur de Soupers de Famille 🍽️</h1>
-    <p class="instruction">Les repas et recettes sont synchronisés en direct pour toute la famille via votre base de données.</p>
+    <p class="instruction">Modifiez la catégorie d'un plat ou utilisez le menu orange à droite pour faire un échange avec un extra.</p>
     
+    <!-- Section Ajouter un repas sécurisée -->
     <div class="ajout-section">
         <input type="text" id="nouveauRepasNom" placeholder="Nom du repas (ex: Vol-au-vent)">
         <select id="nouveauRepasProteine">
@@ -91,8 +95,10 @@
 </div>
 
 <script>
-    const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
+    // Configuration liée à votre projet Supabase
+    const SUPABASE_URL = "https://supabase.co";
+    // ATTENTION : Remplacez par votre clé de sécurité anon/public si elle a été réinitialisée
+    const SUPABASE_KEY = "VOTRE_CLÉ_ANON_PUBLIC_ICI"; 
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -136,6 +142,18 @@
         connecterEtCharger();
     }
 
+    async function changerCategorie(semaineIdx, repasIdx, selectElement) {
+        let nouvelleCat = selectElement.value;
+        let sNum = semaineIdx + 1;
+
+        // Modifier directement la catégorie dans Supabase
+        await _supabase.from('semaines_plan')
+            .update({ proteine_type: nouvelleCat })
+            .match({ semaine_num: sNum, repas_index: repasIdx });
+
+        connecterEtCharger();
+    }
+
     async function changerRepas(semaineIdx, repasIdx, selectElement) {
         let extraIdx = selectElement.value;
         if (extraIdx === "") return;
@@ -173,15 +191,3 @@
 
     function afficherInterface() {
         let gridHtml = "";
-        semaines.forEach((semaine, sIdx) => {
-            gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
-            semaine.forEach((repas, rIdx) => {
-                let nomEscaped = repas.nom.replace(/'/g, "\\'");
-                gridHtml += '  <div class="repas-block">';
-                gridHtml += '    <div class="repas-header">';
-                gridHtml += '      <span class="type cat-' + repas.type + '">' + repas.type + '</span>';
-                gridHtml += '      <select class="select-echange" onchange="changerRepas(' + sIdx + ',' + rIdx + ', this)">';
-                gridHtml += '        <option value="" disabled selected>Échanger...</option>';
-                extras.forEach((ex, exIdx) => { gridHtml += '        <option value="' + exIdx + '">' + ex.nom + '</option>'; });
-                gridHtml += '      </select>';
-                gridHtml += '    </div>';
