@@ -52,7 +52,6 @@
         .btn:hover { background: #219653; }
         .btn-close { background: #95a5a6; float: right; padding: 6px 12px; border: none; color: white; border-radius: 4px; cursor: pointer; }
         
-        /* Zone d'erreur suggérée par Supabase en cas de pépin */
         pre#output { background: #fadbd8; color: #78281f; padding: 15px; border-radius: 6px; border: 1px dashed #e74c3c; font-family: monospace; display: none; font-size: 14px; margin-top: 15px; overflow-x: auto; }
     </style>
 </head>
@@ -74,9 +73,7 @@
         <button id="btn-ajouter-repas" class="btn-ajouter">➕ Ajouter à la base de données</button>
     </div>
     
-    <!-- Boîte de débogage recommandée par Supabase -->
     <pre id="output">Initialisation du tunnel de sécurité cloud...</pre>
-
     <div id="menu-grid" class="grid"></div>
 
     <div class="card card-extra">
@@ -95,12 +92,11 @@
     </div>
 </div>
 
-<!-- LE BLOC MODULE TECHNIQUE SÉRÉ DE SUPABASE -->
 <script type="module">
-  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  // IMPORTATION JSDELIVR CONFIGURÉE ICI
+  import { createClient } from "https://cdn.jsdelivr.net";
 
-  const SUPABASE_URL = "https://supabase.co";
-  // COPIEZ VOTRE CLÉ PUBLIQUE (ANON KEY QUI COMMENCE PAR SB_PUBLISHABLE_...) ENTRE LES GUILLEMETS :
+  const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
   const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -110,25 +106,21 @@
   let platChoisi = "";
 
   async function loadData() {
-    // Afficher la boîte de diagnostic en cours de chargement
     const outBox = document.getElementById("output");
     outBox.style.display = "block";
     outBox.textContent = "🔄 Connexion cryptée en cours avec Supabase...";
 
-    // Lecture des tables
     const resMenu = await supabase.from("semaines_plan").select("*").order("semaine_num", { ascending: true });
     const resExtras = await supabase.from("extras_reserve").select("*");
 
-    // Gestion d'erreur recommandée par Supabase
     if (resMenu.error || resExtras.error) {
       const err = resMenu.error || resExtras.error;
       console.error("Supabase error:", err);
       outBox.style.display = "block";
-      outBox.textContent = "⚠️ Erreur de connexion Supabase ! \nMessage d'erreur : " + err.message + "\nCode d'erreur : " + err.code + "\n\nVérifiez que le RLS de vos tables est bien sur 'RLS Disabled'.";
+      outBox.textContent = "⚠️ Erreur de connexion Supabase ! \nMessage d'erreur : " + err.message + "\nCode d'erreur : " + err.code;
       return;
     }
 
-    // Si pas d'erreur, on masque le panneau de diagnostic et on charge l'interface
     outBox.style.display = "none";
 
     semaines = [ [], [], [], [], [], [] ];
@@ -174,6 +166,16 @@
     });
     document.getElementById("extras-liste").innerHTML = extrasHtml;
 
-    // Écoutes d'actions à l'intérieur de l'espace module
     document.querySelectorAll(".select-cat").forEach(select => {
         select.onchange = async (e) => {
+            let s = e.target.getAttribute("data-s");
+            let r = e.target.getAttribute("data-r");
+            await supabase.from('semaines_plan').update({ proteine_type: e.target.value }).match({ semaine_num: parseInt(s) + 1, repas_index: parseInt(r) });
+            loadData();
+        };
+    });
+
+    document.querySelectorAll(".select-echange").forEach(select => {
+        select.onchange = async (e) => {
+            let s = parseInt(e.target.getAttribute("data-s"));
+            let r = parseInt(e.target.getAttribute("data-r"));
