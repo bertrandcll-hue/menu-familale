@@ -70,7 +70,6 @@
             <option value="poisson">Poisson</option>
             <option value="pâte">Pâte</option>
         </select>
-        <!-- Utilisation d'un identifiant ID pour le bouton lié au module -->
         <button id="btn-ajouter-repas" class="btn-ajouter">➕ Ajouter à la base de données</button>
     </div>
     
@@ -93,12 +92,13 @@
     </div>
 </div>
 
-<!-- LE BLOC MODULE RECOMMANDÉ PAR SUPABASE -->
+<!-- IMPORTATION PAR MODULE DIRECTEMENT LIÉE AU SERVEUR JSDELIVR CERTIFIÉ GITHUB -->
 <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    import { createClient } from "https://jsdelivr.net";
 
     const SUPABASE_URL = "https://supabase.co";
-const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI"; 
+    // RECOPIEZ VOTRE LONGUE CLÉ ANON COMPLÈTE (AVEC LE SB_PUBLISHABLE_...) ENTRE LES GUILLEMETS CI-DESSOUS :
+    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -171,3 +171,4 @@ const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
             select.onchange = async (e) => {
                 let s = e.target.getAttribute("data-s");
                 let r = e.target.getAttribute("data-r");
+                await supabase.from('semaines_plan').update({ proteine_type: e.target.value }).match({ semaine_num: parseInt(s) + 1, repas_index: parseInt(r) });
