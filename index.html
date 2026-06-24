@@ -54,8 +54,6 @@
         
         .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
     </style>
-    <!-- Utilisation du CDN officiel Supabase version 2 (UMD stable) -->
-    <script src="https://jsdelivr.net"></script>
 </head>
 <body>
 
@@ -72,10 +70,11 @@
             <option value="poisson">Poisson</option>
             <option value="pâte">Pâte</option>
         </select>
-        <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter à la base de données</button>
+        <!-- Utilisation d'un identifiant ID pour le bouton lié au module -->
+        <button id="btn-ajouter-repas" class="btn-ajouter">➕ Ajouter à la base de données</button>
     </div>
     
-    <div id="loading" class="loading-text">🔄 Connexion à la base de données en direct...</div>
+    <div id="loading" class="loading-text">🔄 Connexion cryptée en direct à Supabase...</div>
     <div id="menu-grid" class="grid"></div>
 
     <div class="card card-extra">
@@ -86,19 +85,23 @@
 
 <div id="box" class="modal">
     <div class="modal-box">
-        <button class="btn-close" onclick="fermer()">Fermer</button>
+        <button id="btn-modal-close" class="btn-close">Fermer</button>
         <h2 id="titre" style="margin-top: 0; color: #2c3e50;">Recette</h2>
         <textarea id="texte" placeholder="Écrivez les ingrédients..."></textarea>
         <br><br>
-        <button class="btn" onclick="sauver()">Sauvegarder pour toute la famille</button>
+        <button id="btn-modal-save" class="btn">Sauvegarder pour toute la famille</button>
     </div>
 </div>
 
-<script>
+<!-- LE BLOC MODULE RECOMMANDÉ PAR SUPABASE -->
+<script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
     const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI"; 
 
-    let _supabase;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
     let semaines = [];
     let extras = [];
     let platChoisi = "";
@@ -107,12 +110,11 @@ const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
         try {
             document.getElementById("loading").style.display = "block";
             
-            // Appel des tables en version 2.x standardisée
-            let { data: menuData, error: errorMenu } = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
-            let { data: extrasData, error: errorExtras } = await _supabase.from('extras_reserve').select('*');
+            let { data: menuData, error: errorMenu } = await supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
+            let { data: extrasData, error: errorExtras } = await supabase.from('extras_reserve').select('*');
 
             if (errorMenu || errorExtras) {
-                alert("Erreur de lecture de vos tables Supabase : " + (errorMenu?.message || errorExtras?.message));
+                alert("Erreur d'accès : " + (errorMenu?.message || errorExtras?.message));
                 return;
             }
 
@@ -126,71 +128,46 @@ const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
             document.getElementById("loading").style.display = "none";
             afficherInterface();
         } catch(err) {
-            alert("Erreur critique de script : " + err.message);
+            alert("Erreur de tunnel réseau : " + err.message);
         }
     }
-
-    async function ajouterNouveauRepas() {
-        let nomInput = document.getElementById("nouveauRepasNom");
-        let catSelect = document.getElementById("nouveauRepasProteine");
-        let nom = nomInput.value.trim();
-        let cat = catSelect.value;
-        if (nom === "") return;
-
-        let { error } = await _supabase.from('extras_reserve').insert([{ repas_nom: nom, proteine_type: cat }]);
-        if (error) {
-            alert("Erreur d'ajout : " + error.message);
-            return;
-        }
-        
-        alert("'" + nom + "' enregistré !");
-        nomInput.value = "";
-        connecterEtCharger();
-    }
-
-    async function changerCategorie(semaineIdx, repasIdx, selectElement) {
-        let nouvelleCat = selectElement.value;
-        await _supabase.from('semaines_plan')
-            .update({ proteine_type: nouvelleCat })
-            .match({ semaine_num: semaineIdx + 1, repas_index: repasIdx });
-
-        connecterEtCharger();
-    }
-
-    async function changerRepas(semaineIdx, repasIdx, selectElement) {
-        let extraIdx = selectElement.value;
-        if (extraIdx === "") return;
-
-        let repasMenuActuel = semaines[semaineIdx][repasIdx];
-        let repasExtraChoisi = extras[extraIdx];
-
-        await _supabase.from('semaines_plan')
-            .update({ repas_nom: repasExtraChoisi.nom, proteine_type: repasExtraChoisi.type })
-            .match({ semaine_num: semaineIdx + 1, repas_index: repasIdx });
-
-        await _supabase.from('extras_reserve')
-            .update({ repas_nom: repasMenuActuel.nom, proteine_type: repasMenuActuel.type })
-            .match({ repas_nom: repasExtraChoisi.nom });
-
-        connecterEtCharger();
-    }
-
-    async function ouvrir(nom) {
-        platChoisi = nom;
-        document.getElementById("titre").innerText = nom;
-        let { data } = await _supabase.from('recettes_famille').select('texte').eq('repas_nom', nom).single();
-        document.getElementById("texte").value = data ? data.texte : "Ingrédients :\n- \n\nInstructions :\n1. ";
-        document.getElementById("box").style.display = "block";
-    }
-
-    async function sauver() {
-        let contenu = document.getElementById("texte").value;
-        await _supabase.from('recettes_famille').upsert({ repas_nom: platChoisi, texte: contenu }, { onConflict: 'repas_nom' });
-        alert("Recette synchronisée !");
-        fermer();
-    }
-
-    function fermer() { document.getElementById("box").style.display = "none"; }
 
     function afficherInterface() {
         let gridHtml = "";
+        semaines.forEach((semaine, sIdx) => {
+            gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
+            semaine.forEach((repas, rIdx) => {
+                gridHtml += '  <div class="repas-block">';
+                gridHtml += '    <div class="repas-header">';
+                gridHtml += '      <div class="repas-controles">';
+                gridHtml += '        <select class="select-cat" data-s="' + sIdx + '" data-r="' + rIdx + '">';
+                ["bœuf", "poulet", "porc", "poisson", "pâte"].forEach(cat => {
+                    let sel = (cat === repas.type) ? "selected" : "";
+                    gridHtml += '          <option value="' + cat + '" ' + sel + '>' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</option>';
+                });
+                gridHtml += '        </select> ';
+                gridHtml += '        <span class="type cat-' + repas.type + '">' + repas.type + '</span>';
+                gridHtml += '      </div>';
+                gridHtml += '      <select class="select-echange" data-s="' + sIdx + '" data-r="' + rIdx + '">';
+                gridHtml += '        <option value="" disabled selected>Échanger...</option>';
+                extras.forEach((ex, exIdx) => { gridHtml += '        <option value="' + exIdx + '">' + ex.nom + '</option>'; });
+                gridHtml += '      </select>';
+                gridHtml += '    </div>';
+                gridHtml += '    <div class="repas-nom" data-nom="' + repas.nom + '">' + repas.nom + '</div>';
+                gridHtml += '  </div>';
+            });
+            gridHtml += '</div>';
+        });
+        document.getElementById("menu-grid").innerHTML = gridHtml;
+
+        let extrasHtml = "";
+        extras.forEach(ex => {
+            extrasHtml += '<div class="extra-item-wrapper"><div class="extra-item" data-nom="' + ex.nom + '">' + ex.nom + '</div><span class="extra-badge">' + ex.type + '</span></div>';
+        });
+        document.getElementById("extras-liste").innerHTML = extrasHtml;
+
+        // Liaison des écoutes d'événements à l'intérieur du module
+        document.querySelectorAll(".select-cat").forEach(select => {
+            select.onchange = async (e) => {
+                let s = e.target.getAttribute("data-s");
+                let r = e.target.getAttribute("data-r");
