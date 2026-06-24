@@ -54,8 +54,8 @@
         
         .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
     </style>
-    <!-- Chargement universel et stable de la bibliothèque Supabase -->
-    <script src="https://jsdelivr.net"></script>
+    <!-- CHARGEMENT DE LA BIBLIOTHÈQUE COMPATIBLE EN VERSION UNIVERSELLE STANDARDISEE -->
+    <script src="https://cloudflare.com"></script>
 </head>
 <body>
 
@@ -63,7 +63,6 @@
     <h1>Planificateur de Soupers de Famille 🍽️</h1>
     <p class="instruction">Modifiez la catégorie d'un plat ou utilisez le menu orange à droite pour faire un échange avec un extra.</p>
     
-    <!-- Section Ajouter un repas -->
     <div class="ajout-section">
         <input type="text" id="nouveauRepasNom" placeholder="Nom du repas (ex: Vol-au-vent)">
         <select id="nouveauRepasProteine">
@@ -85,7 +84,6 @@
     </div>
 </div>
 
-<!-- Fenêtre Recette -->
 <div id="box" class="modal">
     <div class="modal-box">
         <button class="btn-close" onclick="fermer()">Fermer</button>
@@ -97,10 +95,10 @@
 </div>
 
 <script>
-   const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
+    const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
 
-    // Initialisation directe et globale
+    // Initialisation directe sécurisée
     const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let semaines = [];
@@ -191,3 +189,8 @@ const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
 
     async function sauver() {
         let contenu = document.getElementById("texte").value;
+        await _supabase.from('recettes_famille').upsert({ repas_nom: platChoisi, texte: contenu }, { onConflict: 'repas_nom' });
+        alert("Recette synchronisée !");
+        fermer();
+    }
+
