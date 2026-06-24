@@ -25,6 +25,7 @@
         
         .repas-block { background: #f1f7fc; margin: 10px 0; padding: 10px 12px; border-radius: 6px; }
         .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 5px; }
+        .repas-controles { display: flex; align-items: center; gap: 6px; }
         
         .type { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: white; }
         .cat-bœuf { background-color: #c0392b; }
@@ -33,7 +34,8 @@
         .cat-poisson { background-color: #2980b9; }
         .cat-pâte { background-color: #27ae60; }
 
-        .select-cat, .select-echange { font-size: 11px; padding: 2px; border-radius: 4px; border: 1px solid #bdc3c7; cursor: pointer; }
+        .select-cat { font-size: 11px; padding: 1px 2px; border-radius: 4px; border: 1px solid #bdc3c7; background-color: #fff; color: #33495e; cursor: pointer; }
+        .select-echange { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #f39c12; background-color: #fff8ee; color: #d35400; cursor: pointer; }
         
         .repas-nom { color: #2980b9; font-weight: bold; font-size: 15px; margin-top: 5px; cursor: pointer; display: inline-block; }
         .repas-nom:hover { color: #1a5276; text-decoration: underline; }
@@ -47,53 +49,38 @@
         .modal-box { background: white; margin: 12% auto; padding: 25px; width: 85%; max-width: 500px; border-radius: 10px; }
         textarea { width: 100%; height: 200px; margin-top: 12px; padding: 10px; box-sizing: border-box; }
         .btn { padding: 10px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #219653; }
         .btn-close { background: #95a5a6; float: right; padding: 6px 12px; border: none; color: white; border-radius: 4px; cursor: pointer; }
         
         .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
-        
-        /* Configuration de clé */
-        .config-box { background: #fdfefe; border: 2px dashed #3498db; padding: 15px; margin: 20px auto; max-width: 650px; border-radius: 8px; text-align: center; }
-        .config-box input { width: 80%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
     </style>
-    <!-- Utilisation de la bibliothèque Supabase officielle via jsDelivr -->
+    <!-- Chargement de la bibliothèque standard par CDN jsDelivr -->
     <script src="https://jsdelivr.net"></script>
 </head>
 <body>
 
 <div class="container">
     <h1>Planificateur de Soupers de Famille 🍽️</h1>
+    <p class="instruction">Modifiez la catégorie d'un plat ou utilisez le menu orange à droite pour faire un échange avec un extra.</p>
     
-    <!-- Zone de configuration sécurisée temporaire -->
-    <div id="config-zone" class="config-box" style="display:none;">
-        <h3 style="color:#2980b9;margin:0;">🔑 Configuration de sécurité initiale</h3>
-        <p style="font-size:13px;color:#7f8c8d;margin:5px 0;">Collez votre clé publique (anon/public key) de Supabase pour activer le site de la famille :</p>
-        <input type="text" id="key-input" placeholder="Collez votre longue clé ici (commence par eyJ...)">
-        <br>
-        <button class="btn" onclick="sauvegarderCleConfig()">Activer mon planificateur</button>
+    <div class="ajout-section">
+        <input type="text" id="nouveauRepasNom" placeholder="Nom du repas (ex: Vol-au-vent)">
+        <select id="nouveauRepasProteine">
+            <option value="bœuf">Bœuf</option>
+            <option value="poulet">Poulet</option>
+            <option value="porc">Porc</option>
+            <option value="poisson">Poisson</option>
+            <option value="pâte">Pâte</option>
+        </select>
+        <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter à la base de données</button>
     </div>
+    
+    <div id="loading" class="loading-text">🔄 Connexion à la base de données en direct...</div>
+    <div id="menu-grid" class="grid"></div>
 
-    <div id="app-content" style="display:none;">
-        <p class="instruction">Modifiez la catégorie d'un plat ou utilisez le menu orange à droite pour faire un échange avec un extra.</p>
-        
-        <div class="ajout-section">
-            <input type="text" id="nouveauRepasNom" placeholder="Nom du repas (ex: Vol-au-vent)">
-            <select id="nouveauRepasProteine">
-                <option value="bœuf">Bœuf</option>
-                <option value="poulet">Poulet</option>
-                <option value="porc">Porc</option>
-                <option value="poisson">Poisson</option>
-                <option value="pâte">Pâte</option>
-            </select>
-            <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter à la base de données</button>
-        </div>
-        
-        <div id="loading" class="loading-text">🔄 Connexion à la base de données en direct...</div>
-        <div id="menu-grid" class="grid"></div>
-
-        <div class="card card-extra">
-            <h3>Repas en extra (Disponibles pour remplacement)</h3>
-            <div id="extras-liste" class="extra-box"></div>
-        </div>
+    <div class="card card-extra">
+        <h3>Repas en extra (Disponibles pour remplacement)</h3>
+        <div id="extras-liste" class="extra-box"></div>
     </div>
 </div>
 
@@ -108,88 +95,104 @@
 </div>
 
 <script>
-    const SUPABASE_URL = "https://supabase.co";
-    let SUPABASE_KEY = "";
+    const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI"; 
+
     let _supabase;
     let semaines = [];
     let extras = [];
     let platChoisi = "";
 
-    function verifierConfiguration() {
-        // Lire la clé stockée en toute sécurité dans le navigateur
-        try {
-            SUPABASE_KEY = localStorage.getItem("famille_supabase_anon_key") || "";
-        } catch(e) {
-            SUPABASE_KEY = "";
-        }
-
-        if (!SUPABASE_KEY || SUPABASE_KEY.trim() === "") {
-            document.getElementById("config-zone").style.display = "block";
-            document.getElementById("app-content").style.display = "none";
-        } else {
-            document.getElementById("config-zone").style.display = "none";
-            document.getElementById("app-content").style.display = "block";
-            lancerApplication();
-        }
-    }
-
-    function sauvegarderCleConfig() {
-        let cleVal = document.getElementById("key-input").value.trim();
-        if (cleVal === "") { alert("Veuillez coller une clé valide."); return; }
-        
-        try {
-            localStorage.setItem("famille_supabase_anon_key", cleVal);
-            location.reload(); // Recharger la page proprement
-        } catch(e) {
-            alert("Erreur de stockage : votre navigateur bloque les cookies.");
-        }
-    }
-
-    function lancerApplication() {
-        try {
-            _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            connecterEtCharger();
-        } catch(err) {
-            alert("Erreur critique d'initialisation : " + err.message);
-        }
-    }
-
     async function connecterEtCharger() {
-        document.getElementById("loading").style.display = "block";
-        
-        let responseMenu = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
-        if (responseMenu.error) {
-            alert("Erreur de lecture Supabase : " + responseMenu.error.message);
-            return;
+        try {
+            document.getElementById("loading").style.display = "block";
+            
+            let responseMenu = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
+            let responseExtras = await _supabase.from('extras_reserve').select('*');
+
+            if (responseMenu.error || responseExtras.error) {
+                alert("Erreur Supabase : " + (responseMenu.error?.message || responseExtras.error?.message));
+                return;
+            }
+
+            let menuData = responseMenu.data;
+            let extrasData = responseExtras.data;
+
+            semaines = [ [], [], [], [], [], [] ];
+            menuData.forEach(row => {
+                semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom });
+            });
+
+            extras = extrasData ? extrasData.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
+
+            document.getElementById("loading").style.display = "none";
+            afficherInterface();
+        } catch(err) {
+            alert("Erreur réseau : " + err.message);
         }
-
-        let responseExtras = await _supabase.from('extras_reserve').select('*');
-        let menuData = responseMenu.data;
-        let extrasData = responseExtras.data;
-
-        semaines = [ [], [], [], [], [], [] ];
-        menuData.forEach(row => {
-            semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom });
-        });
-
-        extras = extrasData ? extrasData.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
-
-        document.getElementById("loading").style.display = "none";
-        afficherInterface();
     }
 
     async function ajouterNouveauRepas() {
-        let nom = document.getElementById("nouveauRepasNom").value.trim();
-        let cat = document.getElementById("nouveauRepasProteine").value;
+        let nomInput = document.getElementById("nouveauRepasNom");
+        let catSelect = document.getElementById("nouveauRepasProteine");
+        let nom = nomInput.value.trim();
+        let cat = catSelect.value;
         if (nom === "") return;
 
         await _supabase.from('extras_reserve').insert([{ repas_nom: nom, proteine_type: cat }]);
-        document.getElementById("nouveauRepasNom").value = "";
+        alert("'" + nom + "' sauvegardé dans la BD en ligne !");
+        nomInput.value = "";
         connecterEtCharger();
     }
 
     async function changerCategorie(semaineIdx, repasIdx, selectElement) {
-        await _supabase.from('semaines_plan').update({ proteine_type: selectElement.value }).match({ semaine_num: semaineIdx + 1, repas_index: repasIdx });
+        let nouvelleCat = selectElement.value;
+        await _supabase.from('semaines_plan')
+            .update({ proteine_type: nouvelleCat })
+            .match({ semaine_num: semaineIdx + 1, repas_index: repasIdx });
+
         connecterEtCharger();
     }
 
+    async function changerRepas(semaineIdx, repasIdx, selectElement) {
+        let extraIdx = selectElement.value;
+        if (extraIdx === "") return;
+
+        let repasMenuActuel = semaines[semaineIdx][repasIdx];
+        let repasExtraChoisi = extras[extraIdx];
+
+        await _supabase.from('semaines_plan')
+            .update({ repas_nom: repasExtraChoisi.nom, proteine_type: repasExtraChoisi.type })
+            .match({ semaine_num: semaineIdx + 1, repas_index: repasIdx });
+
+        await _supabase.from('extras_reserve')
+            .update({ repas_nom: repasMenuActuel.nom, proteine_type: repasMenuActuel.type })
+            .match({ repas_nom: repasExtraChoisi.nom });
+
+        connecterEtCharger();
+    }
+
+    async function ouvrir(nom) {
+        platChoisi = nom;
+        document.getElementById("titre").innerText = nom;
+        let { data } = await _supabase.from('recettes_famille').select('texte').eq('repas_nom', nom).single();
+        document.getElementById("texte").value = data ? data.texte : "Ingrédients :\n- \n\nInstructions :\n1. ";
+        document.getElementById("box").style.display = "block";
+    }
+
+    async function sauver() {
+        let contenu = document.getElementById("texte").value;
+        await _supabase.from('recettes_famille').upsert({ repas_nom: platChoisi, texte: contenu }, { onConflict: 'repas_nom' });
+        alert("Recette synchronisée sur la base de données cloud !");
+        fermer();
+    }
+
+    function fermer() { document.getElementById("box").style.display = "none"; }
+
+    function afficherInterface() {
+        let gridHtml = "";
+        semaines.forEach((semaine, sIdx) => {
+            gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
+            semaine.forEach((repas, rIdx) => {
+                let nomEscaped = repas.nom.replace(/'/g, "\\'");
+                gridHtml += '  <div class="repas-block">';
