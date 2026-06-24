@@ -54,7 +54,7 @@
         
         .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
     </style>
-    <!-- UTILISATION DE LA SOURCING STABLE COMPATIBLE GITHUB PAGES -->
+    <!-- Utilisation du CDN officiel Supabase version 2 (UMD stable) -->
     <script src="https://jsdelivr.net"></script>
 </head>
 <body>
@@ -98,9 +98,7 @@
     const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI"; 
 
-    // Syntaxe de connexion universelle v1
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    let _supabase;
     let semaines = [];
     let extras = [];
     let platChoisi = "";
@@ -109,16 +107,14 @@ const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
         try {
             document.getElementById("loading").style.display = "block";
             
-            let responseMenu = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
-            let responseExtras = await _supabase.from('extras_reserve').select('*');
+            // Appel des tables en version 2.x standardisée
+            let { data: menuData, error: errorMenu } = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
+            let { data: extrasData, error: errorExtras } = await _supabase.from('extras_reserve').select('*');
 
-            if (responseMenu.error || responseExtras.error) {
-                alert("Erreur de connexion : " + (responseMenu.error?.message || responseExtras.error?.message));
+            if (errorMenu || errorExtras) {
+                alert("Erreur de lecture de vos tables Supabase : " + (errorMenu?.message || errorExtras?.message));
                 return;
             }
-
-            let menuData = responseMenu.data;
-            let extrasData = responseExtras.data;
 
             semaines = [ [], [], [], [], [], [] ];
             menuData.forEach(row => {
@@ -130,7 +126,7 @@ const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
             document.getElementById("loading").style.display = "none";
             afficherInterface();
         } catch(err) {
-            alert("Erreur réseau : " + err.message);
+            alert("Erreur critique de script : " + err.message);
         }
     }
 
@@ -142,7 +138,10 @@ const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
         if (nom === "") return;
 
         let { error } = await _supabase.from('extras_reserve').insert([{ repas_nom: nom, proteine_type: cat }]);
-        if (error) { alert("Erreur : " + error.message); return; }
+        if (error) {
+            alert("Erreur d'ajout : " + error.message);
+            return;
+        }
         
         alert("'" + nom + "' enregistré !");
         nomInput.value = "";
@@ -179,16 +178,19 @@ const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
     async function ouvrir(nom) {
         platChoisi = nom;
         document.getElementById("titre").innerText = nom;
-        let { data } = await _supabase.from('recettes_famille').select('texte').eq('repas_nom', nom);
-        let singleData = data && data.length > 0 ? data[0] : null;
-        document.getElementById("texte").value = singleData ? singleData.texte : "Ingrédients :\n- \n\nInstructions :\n1. ";
+        let { data } = await _supabase.from('recettes_famille').select('texte').eq('repas_nom', nom).single();
+        document.getElementById("texte").value = data ? data.texte : "Ingrédients :\n- \n\nInstructions :\n1. ";
         document.getElementById("box").style.display = "block";
     }
 
     async function sauver() {
         let contenu = document.getElementById("texte").value;
-        await _supabase.from('recettes_famille').upsert({ repas_nom: platChoisi, texte: contenu });
-        alert("Recette enregistrée !");
+        await _supabase.from('recettes_famille').upsert({ repas_nom: platChoisi, texte: contenu }, { onConflict: 'repas_nom' });
+        alert("Recette synchronisée !");
         fermer();
     }
 
+    function fermer() { document.getElementById("box").style.display = "none"; }
+
+    function afficherInterface() {
+        let gridHtml = "";
