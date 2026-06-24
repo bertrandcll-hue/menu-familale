@@ -52,7 +52,7 @@
         .btn:hover { background: #219653; }
         .btn-close { background: #95a5a6; float: right; padding: 6px 12px; border: none; color: white; border-radius: 4px; cursor: pointer; }
         
-        pre#output { background: #fadbd8; color: #78281f; padding: 15px; border-radius: 6px; border: 1px dashed #e74c3c; font-family: monospace; display: none; font-size: 14px; margin-top: 15px; overflow-x: auto; }
+        .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
     </style>
 </head>
 <body>
@@ -70,10 +70,10 @@
             <option value="poisson">Poisson</option>
             <option value="pâte">Pâte</option>
         </select>
-        <button id="btn-ajouter-repas" class="btn-ajouter">➕ Ajouter à la base de données</button>
+        <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter à la base de données</button>
     </div>
     
-    <pre id="output">Initialisation du tunnel de sécurité cloud...</pre>
+    <div id="loading" class="loading-text">🔄 Synchronisation avec le cloud familial en cours...</div>
     <div id="menu-grid" class="grid"></div>
 
     <div class="card card-extra">
@@ -84,98 +84,116 @@
 
 <div id="box" class="modal">
     <div class="modal-box">
-        <button id="btn-modal-close" class="btn-close">Fermer</button>
+        <button class="btn-close" onclick="fermer()">Fermer</button>
         <h2 id="titre" style="margin-top: 0; color: #2c3e50;">Recette</h2>
         <textarea id="texte" placeholder="Écrivez les ingrédients..."></textarea>
         <br><br>
-        <button id="btn-modal-save" class="btn">Sauvegarder pour toute la famille</button>
+        <button class="btn" onclick="sauver()">Sauvegarder pour toute la famille</button>
     </div>
 </div>
 
-<script type="module">
-  // IMPORTATION JSDELIVR CONFIGURÉE ICI
-  import { createClient } from "https://cdn.jsdelivr.net";
+<script>
+    const BASE_URL = "https://supabase.co";
+    // RECOPIEZ VOTRE CLÉ ANON COMPLÈTE (AVEC LE SB_PUBLISHABLE_...) ENTRE LES GUILLEMETS CI-DESSOUS :
+    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
+    
+    let semaines = [];
+    let extras = [];
+    let platChoisi = "";
 
-  const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
+    // Configuration automatique des entêtes sécurisés natifs
+    const entetes = {
+        "apikey": API_KEY,
+        "Authorization": "Bearer " + API_KEY,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    };
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    async function connecterEtCharger() {
+        try {
+            document.getElementById("loading").style.display = "block";
+            
+            // Appels REST direct sans aucune bibliothèque externe
+            let resMenu = await fetch(BASE_URL + "/semaines_plan?select=*&order=semaine_num.asc", { headers: entetes });
+            let resExtras = await fetch(BASE_URL + "/extras_reserve?select=*", { headers: entetes });
 
-  let semaines = [];
-  let extras = [];
-  let platChoisi = "";
+            if (!resMenu.ok || !resExtras.ok) {
+                alert("Erreur de connexion cloud. Vérifiez que votre clé est valide.");
+                return;
+            }
 
-  async function loadData() {
-    const outBox = document.getElementById("output");
-    outBox.style.display = "block";
-    outBox.textContent = "🔄 Connexion cryptée en cours avec Supabase...";
+            let menuData = await resMenu.json();
+            let extrasData = await resExtras.json();
 
-    const resMenu = await supabase.from("semaines_plan").select("*").order("semaine_num", { ascending: true });
-    const resExtras = await supabase.from("extras_reserve").select("*");
+            semaines = [ [], [], [], [], [], [] ];
+            menuData.forEach(row => {
+                semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom });
+            });
 
-    if (resMenu.error || resExtras.error) {
-      const err = resMenu.error || resExtras.error;
-      console.error("Supabase error:", err);
-      outBox.style.display = "block";
-      outBox.textContent = "⚠️ Erreur de connexion Supabase ! \nMessage d'erreur : " + err.message + "\nCode d'erreur : " + err.code;
-      return;
+            extras = extrasData ? extrasData.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
+
+            document.getElementById("loading").style.display = "none";
+            afficherInterface();
+        } catch(err) {
+            alert("Erreur réseau : " + err.message);
+        }
     }
 
-    outBox.style.display = "none";
+    async function ajouterNouveauRepas() {
+        let nomInput = document.getElementById("nouveauRepasNom");
+        let catSelect = document.getElementById("nouveauRepasProteine");
+        let nom = nomInput.value.trim();
+        let cat = catSelect.value;
+        if (nom === "") return;
 
-    semaines = [ [], [], [], [], [], [] ];
-    resMenu.data.forEach(row => {
-        semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom });
-    });
-
-    extras = resExtras.data ? resExtras.data.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
-    afficherInterface();
-  }
-
-  function afficherInterface() {
-    let gridHtml = "";
-    semaines.forEach((semaine, sIdx) => {
-        gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
-        semaine.forEach((repas, rIdx) => {
-            gridHtml += '  <div class="repas-block">';
-            gridHtml += '    <div class="repas-header">';
-            gridHtml += '      <div class="repas-controles">';
-            gridHtml += '        <select class="select-cat" data-s="' + sIdx + '" data-r="' + rIdx + '">';
-            ["bœuf", "poulet", "porc", "poisson", "pâte"].forEach(cat => {
-                let sel = (cat === repas.type) ? "selected" : "";
-                gridHtml += '          <option value="' + cat + '" ' + sel + '>' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</option>';
-            });
-            gridHtml += '        </select> ';
-            gridHtml += '        <span class="type cat-' + repas.type + '">' + repas.type + '</span>';
-            gridHtml += '      </div>';
-            gridHtml += '      <select class="select-echange" data-s="' + sIdx + '" data-r="' + rIdx + '">';
-            gridHtml += '        <option value="" disabled selected>Échanger...</option>';
-            extras.forEach((ex, exIdx) => { gridHtml += '        <option value="' + exIdx + '">' + ex.nom + '</option>'; });
-            gridHtml += '      </select>';
-            gridHtml += '    </div>';
-            gridHtml += '    <div class="repas-nom" data-nom="' + repas.nom + '">' + repas.nom + '</div>';
-            gridHtml += '  </div>';
+        await fetch(BASE_URL + "/extras_reserve", {
+            method: "POST",
+            headers: entetes,
+            body: JSON.stringify([{ repas_nom: nom, proteine_type: cat }])
         });
-        gridHtml += '</div>';
-    });
-    document.getElementById("menu-grid").innerHTML = gridHtml;
+        
+        alert("'" + nom + "' sauvegardé !");
+        nomInput.value = "";
+        connecterEtCharger();
+    }
 
-    let extrasHtml = "";
-    extras.forEach(ex => {
-        extrasHtml += '<div class="extra-item-wrapper"><div class="extra-item" data-nom="' + ex.nom + '">' + ex.nom + '</div><span class="extra-badge">' + ex.type + '</span></div>';
-    });
-    document.getElementById("extras-liste").innerHTML = extrasHtml;
+    async function changerCategorie(semaineIdx, repasIdx, selectElement) {
+        let nouvelleCat = selectElement.value;
+        await fetch(BASE_URL + "/semaines_plan?semaine_num=eq." + (semaineIdx + 1) + "&repas_index=eq." + repasIdx, {
+            method: "PATCH",
+            headers: entetes,
+            body: JSON.stringify({ proteine_type: nouvelleCat })
+        });
+        connecterEtCharger();
+    }
 
-    document.querySelectorAll(".select-cat").forEach(select => {
-        select.onchange = async (e) => {
-            let s = e.target.getAttribute("data-s");
-            let r = e.target.getAttribute("data-r");
-            await supabase.from('semaines_plan').update({ proteine_type: e.target.value }).match({ semaine_num: parseInt(s) + 1, repas_index: parseInt(r) });
-            loadData();
-        };
-    });
+    async function changerRepas(semaineIdx, repasIdx, selectElement) {
+        let extraIdx = selectElement.value;
+        if (extraIdx === "") return;
 
-    document.querySelectorAll(".select-echange").forEach(select => {
-        select.onchange = async (e) => {
-            let s = parseInt(e.target.getAttribute("data-s"));
-            let r = parseInt(e.target.getAttribute("data-r"));
+        let repasMenuActuel = semaines[semaineIdx][repasIdx];
+        let repasExtraChoisi = extras[extraIdx];
+
+        await fetch(BASE_URL + "/semaines_plan?semaine_num=eq." + (semaineIdx + 1) + "&repas_index=eq." + repasIdx, {
+            method: "PATCH",
+            headers: entetes,
+            body: JSON.stringify({ repas_nom: repasExtraChoisi.nom, proteine_type: repasExtraChoisi.type })
+        });
+
+        await fetch(BASE_URL + "/extras_reserve?repas_nom=eq." + encodeURIComponent(repasExtraChoisi.nom), {
+            method: "PATCH",
+            headers: entetes,
+            body: JSON.stringify({ repas_nom: repasMenuActuel.nom, proteine_type: repasMenuActuel.type })
+        });
+
+        connecterEtCharger();
+    }
+
+    async function ouvrir(nom) {
+        platChoisi = nom;
+        document.getElementById("titre").innerText = nom;
+        
+        let res = await fetch(BASE_URL + "/recettes_famille?repas_nom=eq." + encodeURIComponent(nom) + "&select=texte", { headers: entetes });
+        let data = await res.json();
+        
+        let texteRecette = data && data.length > 0 ? data[0].texte : "";
