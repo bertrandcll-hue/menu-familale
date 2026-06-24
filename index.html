@@ -69,22 +69,29 @@
     </div>
 </div>
 <script>
-    const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI"; 
+   const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
+   const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI"; 
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let semaines = []; let extras = []; let platChoisi = "";
 
     async function connecterEtCharger() {
         document.getElementById("loading").style.display = "block";
+        
+        // Charger les données de Supabase
         let { data: menuData } = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
         let { data: extrasData } = await _supabase.from('extras_reserve').select('*');
-        if ((!menuData || menuData.length === 0) && (!extrasData || extrasData.length === 0)) {
-            await configurerPremiereFois(); return;
+        
+        // Vérification stricte : si la table est vide (tableau de longueur 0), on lance la configuration initiale
+        if (!menuData || menuData.length === 0) {
+            await configurerPremiereFois();
+            return;
         }
+
         semaines = [ [], [], [], [], [], [] ];
         menuData.forEach(row => { semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom }); });
         extras = extrasData ? extrasData.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
+        
         document.getElementById("loading").style.display = "none";
         afficherInterface();
     }
@@ -147,8 +154,3 @@
         let extrasHtml = "";
         extras.forEach(ex => {
             let exEscaped = ex.nom.replace(/'/g, "\\'");
-            extrasHtml += '<div class="extra-item-wrapper"><div class="extra-item" onclick="ouvrir(\'' + exEscaped + '\')">' + ex.nom + '</div><span class="extra-badge">' + ex.type + '</span></div>';
-        });
-        document.getElementById("extras-liste").innerHTML = extrasHtml;
-    }
-
