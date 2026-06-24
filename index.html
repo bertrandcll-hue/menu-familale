@@ -54,7 +54,7 @@
         
         .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
     </style>
-    <!-- SCRIPT DE CONEXION UNIVERSEL MIS À JOUR -->
+    <!-- Script d'intégration officiel Supabase en version CDN standardisée -->
     <script src="https://jsdelivr.net"></script>
 </head>
 <body>
@@ -107,13 +107,21 @@
         try {
             document.getElementById("loading").style.display = "block";
             
-            let { data: menuData, error: errorMenu } = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
-            let { data: extrasData, error: errorExtras } = await _supabase.from('extras_reserve').select('*');
-
-            if (errorMenu || errorExtras) {
-                console.error(errorMenu, errorExtras);
+            // Lancement des requêtes de diagnostic
+            let responseMenu = await _supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
+            if (responseMenu.error) {
+                alert("Erreur de lecture de la table 'semaines_plan' : " + responseMenu.error.message);
                 return;
             }
+
+            let responseExtras = await _supabase.from('extras_reserve').select('*');
+            if (responseExtras.error) {
+                alert("Erreur de lecture de la table 'extras_reserve' : " + responseExtras.error.message);
+                return;
+            }
+
+            let menuData = responseMenu.data;
+            let extrasData = responseExtras.data;
 
             semaines = [ [], [], [], [], [], [] ];
             menuData.forEach(row => {
@@ -125,7 +133,7 @@
             document.getElementById("loading").style.display = "none";
             afficherInterface();
         } catch(err) {
-            console.error(err);
+            alert("Erreur de script réseau : " + err.message);
         }
     }
 
@@ -137,7 +145,12 @@
 
         if (nom === "") return;
 
-        await _supabase.from('extras_reserve').insert([{ repas_nom: nom, proteine_type: cat }]);
+        let { error } = await _supabase.from('extras_reserve').insert([{ repas_nom: nom, proteine_type: cat }]);
+        if (error) {
+            alert("Impossible d'ajouter le repas dans Supabase : " + error.message);
+            return;
+        }
+        
         alert("'" + nom + "' sauvegardé dans la BD en ligne !");
         nomInput.value = "";
         connecterEtCharger();
@@ -180,16 +193,3 @@
 
     async function sauver() {
         let contenu = document.getElementById("texte").value;
-        await _supabase.from('recettes_famille').upsert({ repas_nom: platChoisi, texte: contenu }, { onConflict: 'repas_nom' });
-        alert("Recette synchronisée sur la base de données cloud !");
-        fermer();
-    }
-
-    function fermer() { document.getElementById("box").style.display = "none"; }
-
-    function afficherInterface() {
-        let gridHtml = "";
-        semaines.forEach((semaine, sIdx) => {
-            gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
-            semaine.forEach((repas, rIdx) => {
-                let nomEscaped = repas.nom.replace(/'/g, "\\'");
