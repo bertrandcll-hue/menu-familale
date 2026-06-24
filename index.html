@@ -25,7 +25,6 @@
         
         .repas-block { background: #f1f7fc; margin: 10px 0; padding: 10px 12px; border-radius: 6px; }
         .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 5px; }
-        .repas-controles { display: flex; align-items: center; gap: 6px; }
         
         .type { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: white; }
         .cat-bœuf { background-color: #c0392b; }
@@ -93,44 +92,34 @@
 </div>
 
 <script>
-    const BASE_URL = "https://supabase.co";
-    // RECOPIEZ VOTRE CLÉ ANON COMPLÈTE (AVEC LE SB_PUBLISHABLE_...) ENTRE LES GUILLEMETS CI-DESSOUS :
-    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
-    
-    let semaines = [];
-    let extras = [];
+    // -----------------------------------------------------------------
+    // CONFIGURATION DE VOTRE BOÎTE CLOUD JSONBIN
+    // -----------------------------------------------------------------
+    const BIN_ID = "6a3c31eeda38895dfef92c38";
+    const MASTER_KEY = "$2a$10$byE8Ka5bI4s4RgiwPxWSPeMjgc18UeBrHYommbd56GAcJzL95AZce";
+    // -----------------------------------------------------------------
+
+    let donneesGlobales = { semaines: [], extras: [], recettes: {} };
     let platChoisi = "";
 
-    // Configuration automatique des entêtes sécurisés natifs
+    const urlBin = "https://jsonbin.io" + BIN_ID;
     const entetes = {
-        "apikey": API_KEY,
-        "Authorization": "Bearer " + API_KEY,
         "Content-Type": "application/json",
-        "Prefer": "return=representation"
+        "X-Master-Key": MASTER_KEY
     };
 
     async function connecterEtCharger() {
         try {
             document.getElementById("loading").style.display = "block";
             
-            // Appels REST direct sans aucune bibliothèque externe
-            let resMenu = await fetch(BASE_URL + "/semaines_plan?select=*&order=semaine_num.asc", { headers: entetes });
-            let resExtras = await fetch(BASE_URL + "/extras_reserve?select=*", { headers: entetes });
-
-            if (!resMenu.ok || !resExtras.ok) {
-                alert("Erreur de connexion cloud. Vérifiez que votre clé est valide.");
+            let res = await fetch(urlBin + "/latest", { headers: entetes });
+            if (!res.ok) {
+                alert("Erreur de connexion cloud. Vérifiez vos clés JSONBin.");
                 return;
             }
 
-            let menuData = await resMenu.json();
-            let extrasData = await resExtras.json();
-
-            semaines = [ [], [], [], [], [], [] ];
-            menuData.forEach(row => {
-                semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom });
-            });
-
-            extras = extrasData ? extrasData.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
+            let reponseJson = await res.json();
+            donneesGlobales = reponseJson.record;
 
             document.getElementById("loading").style.display = "none";
             afficherInterface();
@@ -139,61 +128,76 @@
         }
     }
 
-    async function ajouterNouveauRepas() {
+    async function pousserVersCloud() {
+        await fetch(urlBin, {
+            method: "PUT",
+            headers: entetes,
+            body: JSON.stringify(donneesGlobales)
+        });
+        connecterEtCharger();
+    }
+
+    function ajouterNouveauRepas() {
         let nomInput = document.getElementById("nouveauRepasNom");
         let catSelect = document.getElementById("nouveauRepasProteine");
         let nom = nomInput.value.trim();
         let cat = catSelect.value;
         if (nom === "") return;
 
-        await fetch(BASE_URL + "/extras_reserve", {
-            method: "POST",
-            headers: entetes,
-            body: JSON.stringify([{ repas_nom: nom, proteine_type: cat }])
-        });
-        
-        alert("'" + nom + "' sauvegardé !");
+        donneesGlobales.extras.push({ type: cat, nom: nom });
         nomInput.value = "";
-        connecterEtCharger();
+        pousserVersCloud();
     }
 
-    async function changerCategorie(semaineIdx, repasIdx, selectElement) {
-        let nouvelleCat = selectElement.value;
-        await fetch(BASE_URL + "/semaines_plan?semaine_num=eq." + (semaineIdx + 1) + "&repas_index=eq." + repasIdx, {
-            method: "PATCH",
-            headers: entetes,
-            body: JSON.stringify({ proteine_type: nouvelleCat })
-        });
-        connecterEtCharger();
+    function changerCategorie(semaineIdx, repasIdx, selectElement) {
+        donneesGlobales.semaines[semaineIdx][repasIdx].type = selectElement.value;
+        pousserVersCloud();
     }
 
-    async function changerRepas(semaineIdx, repasIdx, selectElement) {
+    function changerRepas(semaineIdx, repasIdx, selectElement) {
         let extraIdx = selectElement.value;
         if (extraIdx === "") return;
 
-        let repasMenuActuel = semaines[semaineIdx][repasIdx];
-        let repasExtraChoisi = extras[extraIdx];
+        let repasMenuActuel = donneesGlobales.semaines[semaineIdx][repasIdx];
+        let repasExtraChoisi = donneesGlobales.extras[extraIdx];
 
-        await fetch(BASE_URL + "/semaines_plan?semaine_num=eq." + (semaineIdx + 1) + "&repas_index=eq." + repasIdx, {
-            method: "PATCH",
-            headers: entetes,
-            body: JSON.stringify({ repas_nom: repasExtraChoisi.nom, proteine_type: repasExtraChoisi.type })
-        });
+        donneesGlobales.semaines[semaineIdx][repasIdx] = repasExtraChoisi;
+        donneesGlobales.extras[extraIdx] = repasMenuActuel;
 
-        await fetch(BASE_URL + "/extras_reserve?repas_nom=eq." + encodeURIComponent(repasExtraChoisi.nom), {
-            method: "PATCH",
-            headers: entetes,
-            body: JSON.stringify({ repas_nom: repasMenuActuel.nom, proteine_type: repasMenuActuel.type })
-        });
-
-        connecterEtCharger();
+        pousserVersCloud();
     }
 
-    async function ouvrir(nom) {
+    function ouvrir(nom) {
         platChoisi = nom;
         document.getElementById("titre").innerText = nom;
         
-        let res = await fetch(BASE_URL + "/recettes_famille?repas_nom=eq." + encodeURIComponent(nom) + "&select=texte", { headers: entetes });
-        let data = await res.json();
-        
-        let texteRecette = data && data.length > 0 ? data[0].texte : "";
+        let texteRecette = donneesGlobales.recettes[nom] || "";
+        document.getElementById("texte").value = texteRecette ? texteRecette : "Ingrédients :\n- \n\nInstructions :\n1. ";
+        document.getElementById("box").style.display = "block";
+    }
+
+    function sauver() {
+        let contenu = document.getElementById("texte").value;
+        donneesGlobales.recettes[platChoisi] = contenu;
+        pousserVersCloud();
+        alert("Recette synchronisée pour la famille !");
+        fermer();
+    }
+
+    function fermer() { document.getElementById("box").style.display = "none"; }
+
+    function afficherInterface() {
+        let gridHtml = "";
+        donneesGlobales.semaines.forEach((semaine, sIdx) => {
+            gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
+            semaine.forEach((repas, rIdx) => {
+                let nomEscaped = repas.nom.replace(/'/g, "\\'");
+                gridHtml += '  <div class="repas-block">';
+                gridHtml += '    <div class="repas-header">';
+                gridHtml += '      <div class="repas-controles">';
+                gridHtml += '        <select class="select-cat" onchange="changerCategorie(' + sIdx + ',' + rIdx + ', this)">';
+                ["bœuf", "poulet", "porc", "poisson", "pâte"].forEach(cat => {
+                    let sel = (cat === repas.type) ? "selected" : "";
+                    gridHtml += '          <option value="' + cat + '" ' + sel + '>' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</option>';
+                });
+                gridHtml += '        </select> ';
