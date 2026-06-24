@@ -52,7 +52,8 @@
         .btn:hover { background: #219653; }
         .btn-close { background: #95a5a6; float: right; padding: 6px 12px; border: none; color: white; border-radius: 4px; cursor: pointer; }
         
-        .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
+        /* Zone d'erreur suggérée par Supabase en cas de pépin */
+        pre#output { background: #fadbd8; color: #78281f; padding: 15px; border-radius: 6px; border: 1px dashed #e74c3c; font-family: monospace; display: none; font-size: 14px; margin-top: 15px; overflow-x: auto; }
     </style>
 </head>
 <body>
@@ -73,7 +74,9 @@
         <button id="btn-ajouter-repas" class="btn-ajouter">➕ Ajouter à la base de données</button>
     </div>
     
-    <div id="loading" class="loading-text">🔄 Connexion cryptée en direct à Supabase...</div>
+    <!-- Boîte de débogage recommandée par Supabase -->
+    <pre id="output">Initialisation du tunnel de sécurité cloud...</pre>
+
     <div id="menu-grid" class="grid"></div>
 
     <div class="card card-extra">
@@ -92,83 +95,85 @@
     </div>
 </div>
 
-<!-- IMPORTATION PAR MODULE DIRECTEMENT LIÉE AU SERVEUR JSDELIVR CERTIFIÉ GITHUB -->
+<!-- LE BLOC MODULE TECHNIQUE SÉRÉ DE SUPABASE -->
 <script type="module">
-    import { createClient } from "https://jsdelivr.net";
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    const SUPABASE_URL = "https://supabase.co";
-    // RECOPIEZ VOTRE LONGUE CLÉ ANON COMPLÈTE (AVEC LE SB_PUBLISHABLE_...) ENTRE LES GUILLEMETS CI-DESSOUS :
-    const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
+  const SUPABASE_URL = "https://supabase.co";
+  // COPIEZ VOTRE CLÉ PUBLIQUE (ANON KEY QUI COMMENCE PAR SB_PUBLISHABLE_...) ENTRE LES GUILLEMETS :
+  const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let semaines = [];
-    let extras = [];
-    let platChoisi = "";
+  let semaines = [];
+  let extras = [];
+  let platChoisi = "";
 
-    async function connecterEtCharger() {
-        try {
-            document.getElementById("loading").style.display = "block";
-            
-            let { data: menuData, error: errorMenu } = await supabase.from('semaines_plan').select('*').order('semaine_num', { ascending: true });
-            let { data: extrasData, error: errorExtras } = await supabase.from('extras_reserve').select('*');
+  async function loadData() {
+    // Afficher la boîte de diagnostic en cours de chargement
+    const outBox = document.getElementById("output");
+    outBox.style.display = "block";
+    outBox.textContent = "🔄 Connexion cryptée en cours avec Supabase...";
 
-            if (errorMenu || errorExtras) {
-                alert("Erreur d'accès : " + (errorMenu?.message || errorExtras?.message));
-                return;
-            }
+    // Lecture des tables
+    const resMenu = await supabase.from("semaines_plan").select("*").order("semaine_num", { ascending: true });
+    const resExtras = await supabase.from("extras_reserve").select("*");
 
-            semaines = [ [], [], [], [], [], [] ];
-            menuData.forEach(row => {
-                semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom });
-            });
-
-            extras = extrasData ? extrasData.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
-
-            document.getElementById("loading").style.display = "none";
-            afficherInterface();
-        } catch(err) {
-            alert("Erreur de tunnel réseau : " + err.message);
-        }
+    // Gestion d'erreur recommandée par Supabase
+    if (resMenu.error || resExtras.error) {
+      const err = resMenu.error || resExtras.error;
+      console.error("Supabase error:", err);
+      outBox.style.display = "block";
+      outBox.textContent = "⚠️ Erreur de connexion Supabase ! \nMessage d'erreur : " + err.message + "\nCode d'erreur : " + err.code + "\n\nVérifiez que le RLS de vos tables est bien sur 'RLS Disabled'.";
+      return;
     }
 
-    function afficherInterface() {
-        let gridHtml = "";
-        semaines.forEach((semaine, sIdx) => {
-            gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
-            semaine.forEach((repas, rIdx) => {
-                gridHtml += '  <div class="repas-block">';
-                gridHtml += '    <div class="repas-header">';
-                gridHtml += '      <div class="repas-controles">';
-                gridHtml += '        <select class="select-cat" data-s="' + sIdx + '" data-r="' + rIdx + '">';
-                ["bœuf", "poulet", "porc", "poisson", "pâte"].forEach(cat => {
-                    let sel = (cat === repas.type) ? "selected" : "";
-                    gridHtml += '          <option value="' + cat + '" ' + sel + '>' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</option>';
-                });
-                gridHtml += '        </select> ';
-                gridHtml += '        <span class="type cat-' + repas.type + '">' + repas.type + '</span>';
-                gridHtml += '      </div>';
-                gridHtml += '      <select class="select-echange" data-s="' + sIdx + '" data-r="' + rIdx + '">';
-                gridHtml += '        <option value="" disabled selected>Échanger...</option>';
-                extras.forEach((ex, exIdx) => { gridHtml += '        <option value="' + exIdx + '">' + ex.nom + '</option>'; });
-                gridHtml += '      </select>';
-                gridHtml += '    </div>';
-                gridHtml += '    <div class="repas-nom" data-nom="' + repas.nom + '">' + repas.nom + '</div>';
-                gridHtml += '  </div>';
+    // Si pas d'erreur, on masque le panneau de diagnostic et on charge l'interface
+    outBox.style.display = "none";
+
+    semaines = [ [], [], [], [], [], [] ];
+    resMenu.data.forEach(row => {
+        semaines[row.semaine_num - 1].push({ type: row.proteine_type, nom: row.repas_nom });
+    });
+
+    extras = resExtras.data ? resExtras.data.map(e => ({ type: e.proteine_type, nom: e.repas_nom })) : [];
+    afficherInterface();
+  }
+
+  function afficherInterface() {
+    let gridHtml = "";
+    semaines.forEach((semaine, sIdx) => {
+        gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
+        semaine.forEach((repas, rIdx) => {
+            gridHtml += '  <div class="repas-block">';
+            gridHtml += '    <div class="repas-header">';
+            gridHtml += '      <div class="repas-controles">';
+            gridHtml += '        <select class="select-cat" data-s="' + sIdx + '" data-r="' + rIdx + '">';
+            ["bœuf", "poulet", "porc", "poisson", "pâte"].forEach(cat => {
+                let sel = (cat === repas.type) ? "selected" : "";
+                gridHtml += '          <option value="' + cat + '" ' + sel + '>' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</option>';
             });
-            gridHtml += '</div>';
+            gridHtml += '        </select> ';
+            gridHtml += '        <span class="type cat-' + repas.type + '">' + repas.type + '</span>';
+            gridHtml += '      </div>';
+            gridHtml += '      <select class="select-echange" data-s="' + sIdx + '" data-r="' + rIdx + '">';
+            gridHtml += '        <option value="" disabled selected>Échanger...</option>';
+            extras.forEach((ex, exIdx) => { gridHtml += '        <option value="' + exIdx + '">' + ex.nom + '</option>'; });
+            gridHtml += '      </select>';
+            gridHtml += '    </div>';
+            gridHtml += '    <div class="repas-nom" data-nom="' + repas.nom + '">' + repas.nom + '</div>';
+            gridHtml += '  </div>';
         });
-        document.getElementById("menu-grid").innerHTML = gridHtml;
+        gridHtml += '</div>';
+    });
+    document.getElementById("menu-grid").innerHTML = gridHtml;
 
-        let extrasHtml = "";
-        extras.forEach(ex => {
-            extrasHtml += '<div class="extra-item-wrapper"><div class="extra-item" data-nom="' + ex.nom + '">' + ex.nom + '</div><span class="extra-badge">' + ex.type + '</span></div>';
-        });
-        document.getElementById("extras-liste").innerHTML = extrasHtml;
+    let extrasHtml = "";
+    extras.forEach(ex => {
+        extrasHtml += '<div class="extra-item-wrapper"><div class="extra-item" data-nom="' + ex.nom + '">' + ex.nom + '</div><span class="extra-badge">' + ex.type + '</span></div>';
+    });
+    document.getElementById("extras-liste").innerHTML = extrasHtml;
 
-        // Liaison des écoutes d'événements à l'intérieur du module
-        document.querySelectorAll(".select-cat").forEach(select => {
-            select.onchange = async (e) => {
-                let s = e.target.getAttribute("data-s");
-                let r = e.target.getAttribute("data-r");
-                await supabase.from('semaines_plan').update({ proteine_type: e.target.value }).match({ semaine_num: parseInt(s) + 1, repas_index: parseInt(r) });
+    // Écoutes d'actions à l'intérieur de l'espace module
+    document.querySelectorAll(".select-cat").forEach(select => {
+        select.onchange = async (e) => {
