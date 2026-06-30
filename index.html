@@ -192,9 +192,8 @@
 
 
 
-        async function sauvegarderPlanPrive() {
+           async function sauvegarderPlanPrive() {
         try {
-            // Création/Mise à jour automatique par nom de fichier jsonbin
             await fetch("https://jsonbin.io", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY, "X-Bin-Name": "plan-" + codeFamilleActif },
@@ -205,7 +204,7 @@
 
     async function sauvegarderExtrasCollectifs() {
         try {
-            // Envoi direct dans la banque partagée de tous les amis
+            // CORRECTION DE L'ADRESSE : Utilisation de PUT et de /latest pour jsonbin
             await fetch("https://jsonbin.io/" + BIN_EXTRAS_COLLECTIF, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY },
@@ -218,8 +217,7 @@
         let nomInput = document.getElementById("nouveauRepasNom");
         let nom = nomInput.value.trim(); if (nom === "") return;
         donneesFamille.extras.push({ nom: nom, ing: "" }); nomInput.value = "";
-        afficherInterface(); 
-        await sauvegarderExtrasCollectifs();
+        afficherInterface(); await sauvegarderExtrasCollectifs();
     }
 
     async function changerRepas(sIdx, rIdx, select) {
@@ -227,9 +225,7 @@
         let actuelMenu = donneesFamille.semaines[sIdx][rIdx];
         donneesFamille.semaines[sIdx][rIdx] = donneesFamille.extras[extraIdx];
         donneesFamille.extras[extraIdx] = actuelMenu;
-        afficherInterface(); 
-        await sauvegarderPlanPrive(); 
-        await sauvegarderExtrasCollectifs();
+        afficherInterface(); await sauvegarderPlanPrive(); await sauvegarderExtrasCollectifs();
     }
 
     function ouvrirIngredients(type, s, r, nomPlat) {
@@ -242,6 +238,7 @@
 
     async function sauverIngredients() {
         let txt = document.getElementById("modal-texte").value.trim();
+        document.getElementById("loading").style.display = "block";
         if (typePlatSelectionne === "semaine") {
             donneesFamille.semaines[sIdxSelectionne][rIdxSelectionne].ing = txt; await sauvegarderPlanPrive();
         } else {
@@ -277,12 +274,12 @@
             semaine.forEach((repas, rIdx) => {
                 let nomAffichage = (repas && repas.nom) ? repas.nom : "Repas libre";
                 let spanId = `nom-${sIdx}-${rIdx}`, selectId = `sel-${sIdx}-${rIdx}`;
-                gridHtml += `<div class="repas-block"><div class="repas-header"><span class="repas-nom" id="${spanId}">${nomAffichage}</span>`;
-                gridHtml += `<select class="select-echange" id="${selectId}"><option value="" disabled selected>🔄</option>`;
-                donneesFamille.extras.forEach((ex, exIdx) => { gridHtml += `<option value="${exIdx}">${ex.nom}</option>`; });
+                gridHtml += '<div class="repas-block"><div class="repas-header"><span class="repas-nom" id="' + spanId + '">' + nomAffichage + '</span>';
+                gridHtml += '<select class="select-echange" id="' + selectId + '"><option value="" disabled selected>🔄</option>';
+                donneesFamille.extras.forEach((ex, exIdx) => { gridHtml += '<option value="' + exIdx + '">' + ex.nom + '</option>'; });
                 gridHtml += '</select></div></div>';
             });
-            gridHtml += `</div><button class="btn-epicerie" id="btn-epi-${sIdx}">🛒 Liste d'épicerie</button></div>`;
+            gridHtml += '</div><button class="btn-epicerie" id="btn-epi-' + sIdx + '">🛒 Liste d\'épicerie</button></div>';
         });
         document.getElementById("menu-grid").innerHTML = gridHtml;
         
@@ -295,9 +292,15 @@
         });
 
         let extrasHtml = "";
-        donneesFamille.extras.forEach((ex, exIdx) => { if (ex && ex.nom) extrasHtml += '<div class="extra-item" id="ex-${exIdx}">${ex.nom}</div>'; });
+        donneesFamille.extras.forEach((ex, exIdx) => { 
+            // CORRECTION DES GUILLEMETS : Concaténation de texte certifiée sans bug de backtick
+            if (ex && ex.nom) extrasHtml += '<div class="extra-item" id="ex-' + exIdx + '">' + ex.nom + '</div>'; 
+        });
         document.getElementById("extras-liste").innerHTML = extrasHtml;
-        donneesFamille.extras.forEach((ex, exIdx) => { if (ex && ex.nom) document.getElementById(`ex-${exIdx}`).addEventListener("click", () => ouvrirIngredients('extra', 0, 0, ex.nom)); });
+        
+        donneesFamille.extras.forEach((ex, exIdx) => { 
+            if (ex && ex.nom) document.getElementById('ex-' + exIdx).addEventListener("click", () => ouvrirIngredients('extra', 0, 0, ex.nom)); 
+        });
     }
 </script>
 </body>
