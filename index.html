@@ -47,6 +47,10 @@
 
 
 
+
+
+    
+
 <body>
 <!-- Écran de Connexion Multi-Projets -->
 <div id="ecran-login" class="login-box">
@@ -103,9 +107,10 @@
     const MASTER_KEY = "$2a$10$byE8Ka5bI4s4RgiwPxWSPeMjgc18UeBrHYommbd56GAcJzL95AZce";
     // -----------------------------------------------------------------
 
+
     let codeFamilleActif = "";
     let donneesFamille = { semaines: [], extras: [] };
-    let typePlatSelectionne = ""; let sIdxSelectionne = 0, rIdxSelectionne = 0, extraPlatNomSelectionne = "";
+    let typePlatSelectionne = "", sIdxSelectionne = 0, rIdxSelectionne = 0, extraPlatNomSelectionne = "";
 
     const REPAS_DE_BASE = [
         [ {nom: "Pâté chinois", ing: ""}, {nom: "Poulet entier", ing: ""}, {nom: "Belogne rôti", ing: ""}, {nom: "Poke Bowl", ing: ""} ],
@@ -114,6 +119,10 @@
         [ {nom: "Boulette M&M", ing: ""}, {nom: "Fajitas", ing: ""}, {nom: "Saucisses dans le sirop", ing: ""}, {nom: "Casserole de thon", ing: ""} ],
         [ {nom: "Spaghetti", ing: ""}, {nom: "Poulet rouge", ing: ""}, {nom: "Épaule de porc", ing: ""}, {nom: "Macaroni à la viande", ing: ""} ],
         [ {nom: "Pâte au boeuf à la coréenne", ing: ""}, {nom: "Poulet Parmigiana", ing: ""}, {nom: "Pâte Carbonara", ing: ""}, {nom: "Mac & Cheese", ing: ""} ]
+    ];
+    const EXTRAS_DE_SECOURS = [
+        {nom: "Lasagne", ing: ""}, {nom: "Tortellini sauce rosée", ing: ""}, {nom: "Club sandwich", ing: ""}, 
+        {nom: "Vol-au-vent", ing: ""}, {nom: "Burritos Bowl", ing: ""}, {nom: "Quesedillas", ing: ""}
     ];
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -155,14 +164,16 @@
                 headers: { "X-Master-Key": MASTER_KEY, "X-Bin-Name": "catalogue-commun-extras" }
             });
             if (rExtras.status === 404 || !rExtras.ok) {
-                donneesFamille.extras = [ {nom: "Lasagne", ing:""}, {nom: "Tortellini", ing:""} ]; await sauvegarderExtrasCollectifs();
+                donneesFamille.extras = JSON.parse(JSON.stringify(EXTRAS_DE_SECOURS)); await sauvegarderExtrasCollectifs();
             } else { let jE = await rExtras.json(); donneesFamille.extras = jE.record.extras; }
         } catch(err) {
             donneesFamille.semaines = JSON.parse(JSON.stringify(REPAS_DE_BASE));
-            donneesFamille.extras = [ {nom: "Lasagne", ing:""} ];
+            donneesFamille.extras = JSON.parse(JSON.stringify(EXTRAS_DE_SECOURS));
         }
         document.getElementById("loading").style.display = "none"; afficherInterface();
     }
+
+
 
 
 
@@ -258,7 +269,7 @@
                 donneesFamille.extras.forEach((ex, exIdx) => { gridHtml += `<option value="${exIdx}">${ex.nom}</option>`; });
                 gridHtml += '</select></div></div>';
             });
-            gridHtml += `</div><button class="btn-epicerie" id="btn-epi-${sIdx}">🛒 Liste d'épicerie</button></div>`;
+            gridHtml += `</div><button class="btn-epicerie" id="btn-epi-${sIdx}">🛒 Liste d'épicerie</button></div>';
         });
         document.getElementById("menu-grid").innerHTML = gridHtml;
         
@@ -271,7 +282,7 @@
         });
 
         let extrasHtml = "";
-        donneesFamille.extras.forEach((ex, exIdx) => { if (ex && ex.nom) extrasHtml += `<div class="extra-item" id="ex-${exIdx}">${ex.nom}</div>`; });
+        donneesFamille.extras.forEach((ex, exIdx) => { if (ex && ex.nom) extrasHtml += '<div class="extra-item" id="ex-${exIdx}">${ex.nom}</div>'; });
         document.getElementById("extras-liste").innerHTML = extrasHtml;
         donneesFamille.extras.forEach((ex, exIdx) => { if (ex && ex.nom) document.getElementById(`ex-${exIdx}`).addEventListener("click", () => ouvrirIngredients('extra', 0, 0, ex.nom)); });
     }
