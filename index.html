@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="fr-CA">
 <head>
     <meta charset="UTF-8">
@@ -46,32 +45,28 @@
 </head>
 
 
-
-    
-
-
-<body>
-<!-- Formulaire d'accès transparent (Inscription et Connexion combinées) -->
+    <body>
+<!-- Formulaire d'accès transparent corrigé (sans attribut onclick) -->
 <div id="ecran-connexion" class="auth-box">
     <h2 style="margin: 0; color: #2c3e50;">🍽️ Accès Planificateur</h2>
     <p style="font-size: 13px; color: #7f8c8d; margin-top: 5px;">Entrez votre courriel et votre mot de passe familiaux. S'il s'agit de votre première visite, votre espace sera créé automatiquement.</p>
     <input type="email" id="login-email" placeholder="Adresse courriel de la famille">
     <input type="password" id="login-password" placeholder="Mot de passe">
-    <button class="btn-auth" onclick="connexionFamille()">Ouvrir mon planificateur</button>
+    <button class="btn-auth" id="btn-connexion-action">Ouvrir mon planificateur</button>
 </div>
 
 <!-- L'application Principale -->
 <div id="ecran-principal" class="container" style="display: none;">
     <div class="logout-zone">
         <span>👋 Bienvenue, <strong id="affichage-user">Famille</strong></span>
-        <button class="btn-logout" onclick="deconnexion()">Se déconnecter</button>
+        <button class="btn-logout" id="btn-deconnexion-action">Se déconnecter</button>
     </div>
     <h1>Mon Planificateur de Soupers de Famille 🍽️</h1>
     <p class="instruction">Les repas ajoutés vont dans les extras de TOUT LE MONDE. Échangez-les pour bâtir vos 6 semaines privées.</p>
     
     <div class="ajout-section">
         <input type="text" id="nouveauRepasNom" placeholder="Nom du repas (ex: Vol-au-vent)">
-        <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter à la banque collective</button>
+        <button class="btn-ajouter" id="btn-ajouter-action">➕ Ajouter à la banque collective</button>
     </div>
 
     <div id="loading" class="loading-text" style="display:none;">🔄 Synchronisation cloud en direct...</div>
@@ -81,20 +76,21 @@
 
 <div id="box-ingredients" class="modal">
     <div class="modal-box">
-        <button class="btn-close" onclick="fermerFenetre()">Fermer</button>
+        <button class="btn-close" id="btn-fermer-ing-action">Fermer</button>
         <h2 id="modal-titre" style="margin-top: 0; color: #2c3e50;">Ingrédients</h2>
         <textarea id="modal-texte" placeholder="Écrivez les ingrédients..."></textarea>
-        <button class="btn-action" onclick="sauverIngredients()">💾 Enregistrer la liste</button>
+        <button class="btn-action" id="btn-sauver-ing-action">💾 Enregistrer la liste</button>
     </div>
 </div>
 
 <div id="box-epicerie" class="modal">
     <div class="modal-box">
-        <button class="btn-close" onclick="fermerEpicerie()">Fermer</button>
+        <button class="btn-close" id="btn-fermer-epi-action">Fermer</button>
         <h2 id="epicerie-titre" style="margin-top: 0; color: #2c3e50;">🛒 Liste d'épicerie</h2>
         <div id="epicerie-corps" class="liste-resume"></div>
     </div>
 </div>
+
 
 
 
@@ -115,11 +111,8 @@
     // -----------------------------------------------------------------
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    let identifiantFamille = null;
-    let courrielFamille = "";
-    let semaines = []; let extras = [];
-    let typePlatSelectionne = ""; let sIdxSelectionne = 0, rIdxSelectionne = 0, extraPlatNomSelectionne = "";
+    let identifiantFamille = null, courrielFamille = "", semaines = [], extras = [];
+    let typePlatSelectionne = "", sIdxSelectionne = 0, rIdxSelectionne = 0, extraPlatNomSelectionne = "";
 
     const REPAS_DE_BASE = [
         [ {nom: "Pâté chinois", ing: ""}, {nom: "Poulet entier", ing: ""}, {nom: "Belogne rôti", ing: ""}, {nom: "Poke Bowl", ing: ""} ],
@@ -130,109 +123,104 @@
         [ {nom: "Pâte au boeuf à la coréenne", ing: ""}, {nom: "Poulet Parmigiana", ing: ""}, {nom: "Pâte Carbonara", ing: ""}, {nom: "Mac & Cheese", ing: ""} ]
     ];
 
-    window.connexionFamille = async function() {
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("btn-connexion-action").addEventListener("click", connexionFamille);
+        document.getElementById("btn-deconnexion-action").addEventListener("click", deconnexion);
+        document.getElementById("btn-ajouter-action").addEventListener("click", ajouterNouveauRepas);
+        document.getElementById("btn-fermer-ing-action").addEventListener("click", fermerFenetre);
+        document.getElementById("btn-sauver-ing-action").addEventListener("click", sauverIngredients);
+        document.getElementById("btn-fermer-epi-action").addEventListener("click", fermerEpicerie);
+        initialiserSession();
+    });
+
+    async function connexionFamille() {
         let email = document.getElementById("login-email").value.trim().toLowerCase();
         let pass = document.getElementById("login-password").value;
-        if (!email || pass.length < 4) { alert("Veuillez entrer un courriel et un mot de passe valides (min 4 caractères)."); return; }
+        if (!email || pass.length < 4) { alert("Format invalide (min 4 car)."); return; }
         document.getElementById("loading").style.display = "block";
-        
         try {
             let { data, error } = await supabase.from('comptes_familles').select('*').eq('courriel', email);
-            
             if (data && data.length > 0) {
-                let famille = data[0]; // Correction de l'index du tableau
-                if (famille.mot_de_passe !== pass) {
-                    alert("Mot de passe incorrect pour cette famille.");
-                    document.getElementById("loading").style.display = "none"; return;
-                }
-                ouvrirSession(famille.id, famille.courriel);
+                let f = data;
+                if (f.mot_de_passe !== pass) { alert("Mot de passe incorrect."); document.getElementById("loading").style.display = "none"; return; }
+                ouvrirSession(f.id, f.courriel);
             } else {
-                let { data: nouveauCompte, error: errIns } = await supabase.from('comptes_familles').insert([{ courriel: email, mot_de_passe: pass }]).select();
-                if (errIns || !nouveauCompte || nouveauCompte.length === 0) {
-                    alert("Erreur de création du compte.");
-                    document.getElementById("loading").style.display = "none"; return;
-                }
-                alert("✨ Bienvenue ! Votre espace famille privé a été créé.");
-                ouvrirSession(nouveauCompte[0].id, nouveauCompte[0].courriel); // Correction de l'index du tableau
+                let { data: n, error: errIns } = await supabase.from('comptes_familles').insert([{ courriel: email, mot_de_passe: pass }]).select();
+                if (errIns || !n || n.length === 0) { alert("Erreur de création."); document.getElementById("loading").style.display = "none"; return; }
+                alert("✨ Nouvel espace famille créé !"); ouvrirSession(n.id, n.courriel);
             }
-        } catch (err) {
-            alert("Erreur : " + err.message); document.getElementById("loading").style.display = "none";
-        }
-    };
+        } catch (err) { alert("Erreur : " + err.message); document.getElementById("loading").style.display = "none"; }
+    }
 
-    function abrirSession(id, email) {
+
+
+
+
+        function ouvrirSession(id, email) {
         try { localStorage.setItem("session_famille_id", id); localStorage.setItem("session_famille_email", email); } catch(e) {}
         location.reload();
     }
-    window.ouvrirSession = abrirSession;
 
-    window.deconnexion = function() {
+    function deconnexion() {
         try { localStorage.removeItem("session_famille_id"); localStorage.removeItem("session_famille_email"); } catch(e) {}
         location.reload();
-    };
+    }
 
-
-
-
-    
-
-
-    
-
-
-     async function chargerMenuDepuisCloud() {
+    async function chargerMenuDepuisCloud() {
         document.getElementById("loading").style.display = "block";
         try {
-            let { data: planFamille } = await supabase.from('plans_familles').select('*').eq('user_id', identifiantFamille).order('semaine_num', { ascending: true });
-            let { data: banqueExtras } = await supabase.from('extras_partages').select('*');
-
-            extras = banqueExtras ? banqueExtras.map(e => ({ nom: e.repas_nom, ing: e.ingrédients })) : [];
+            let { data: pl } = await supabase.from('plans_familles').select('*').eq('user_id', identifiantFamille).order('semaine_num', { ascending: true });
+            let { data: ex } = await supabase.from('extras_partages').select('*');
+            extras = ex ? ex.map(e => ({ nom: e.repas_nom, ing: e.ingrédients })) : [];
             semaines = [ [], [], [], [], [], [] ];
-
-            if (!planFamille || planFamille.length === 0) {
-                REPAS_DE_BASE.forEach((sem, sIdx) => {
-                    sem.forEach((rep, rIdx) => { semaines[sIdx].push({ nom: rep.nom, ing: rep.ing }); });
-                });
+            if (!pl || pl.length === 0) {
+                REPAS_DE_BASE.forEach((s, sIdx) => { s.forEach((r, rIdx) => { semaines[sIdx].push({ nom: r.nom, ing: r.ing }); }); });
                 for(let s=0; s<6; s++) {
                     for(let r=0; r<4; r++) {
                         await supabase.from('plans_familles').insert([{ user_id: identifiantFamille, semaine_num: s+1, repas_index: r, repas_nom: semaines[s][r].nom, ingrédients: semaines[s][r].ing }]);
                     }
                 }
             } else {
-                planFamille.forEach(row => {
+                pl.forEach(row => {
                     if (!semaines[row.semaine_num - 1]) semaines[row.semaine_num - 1] = [];
                     semaines[row.semaine_num - 1][row.repas_index] = { nom: row.repas_nom, ing: row.ingrédients };
                 });
             }
         } catch(e) {}
-        document.getElementById("loading").style.display = "none";
-        afficherInterface();
+        document.getElementById("loading").style.display = "none"; afficherInterface();
     }
 
-    window.ajouterNouveauRepas = async function() {
+    async function ajouterNouveauRepas() {
         let nomInput = document.getElementById("nouveauRepasNom");
         let nom = nomInput.value.trim(); if (nom === "") return;
         let { error } = await supabase.from('extras_partages').insert([{ repas_nom: nom, ingrédients: "" }]);
-        if (error && error.code === "23505") { alert("Ce repas existe déjà !"); return; }
+        if (error && error.code === "23505") { alert("Existe déjà !"); return; }
         nomInput.value = ""; chargerMenuDepuisCloud();
-    };
+    }
 
-    window.changerRepas = async function(sIdx, rIdx, select) {
+    async function changerRepas(sIdx, rIdx, select) {
         let extraIdx = select.value; if (extraIdx === "") return;
         let nouveauRepas = extras[extraIdx];
         await supabase.from('plans_familles').update({ repas_nom: nouveauRepas.nom, ingrédients: nouveauRepas.ing }).match({ user_id: identifiantFamille, semaine_num: sIdx + 1, repas_index: rIdx });
         chargerMenuDepuisCloud();
-    };
+    }
 
-    window.ouvrirIngredients = function(type, s, r, nomPlat) {
+
+
+
+
+
+
+
+        function ouvrirIngredients(type, s, r, nomPlat) {
         typePlatSelectionne = type; sIdxSelectionne = s; rIdxSelectionne = r; extraPlatNomSelectionne = nomPlat;
         let plat = (type === "semaine") ? semaines[s][r] : extras.find(e => e.nom === nomPlat);
         document.getElementById("modal-titre").innerText = plat.nom;
         document.getElementById("modal-texte").value = plat.ing || "";
         document.getElementById("box-ingredients").style.display = "block";
-    };
+    }
 
-    window.sauverIngredients = async function() {
+    async function sauverIngredients() {
         let txt = document.getElementById("modal-texte").value.trim();
         if (typePlatSelectionne === "semaine") {
             semaines[sIdxSelectionne][rIdxSelectionne].ing = txt;
@@ -240,10 +228,10 @@
         } else {
             await supabase.from('extras_partages').update({ ingrédients: txt }).eq('repas_nom', extraPlatNomSelectionne);
         }
-        window.fermerFenetre(); chargerMenuDepuisCloud();
-    };
+        fermerFenetre(); chargerMenuDepuisCloud();
+    }
 
-    window.genererEpicerieSemaine = function(sIdx) {
+    function genererEpicerieSemaine(sIdx) {
         document.getElementById("epicerie-titre").innerText = "🛒 Épicerie - Semaine " + (sIdx + 1);
         let txt = "";
         semaines[sIdx].forEach(repas => {
@@ -252,10 +240,10 @@
             }
         });
         document.getElementById("epicerie-corps").innerText = txt; document.getElementById("box-epicerie").style.display = "block";
-    };
+    }
 
-    window.fermerFenetre = function() { document.getElementById("box-ingredients").style.display = "none"; };
-    window.fermerEpicerie = function() { document.getElementById("box-epicerie").style.display = "none"; };
+    function fermerFenetre() { document.getElementById("box-ingredients").style.display = "none"; }
+    function fermerEpicerie() { document.getElementById("box-epicerie").style.display = "none"; }
 
     function afficherInterface() {
         let gridHtml = "";
@@ -263,32 +251,40 @@
             gridHtml += '<div class="card"><div><h3>Semaine ' + (sIdx + 1) + '</h3>';
             semaine.forEach((repas, rIdx) => {
                 let nomAffichage = (repas && repas.nom) ? repas.nom : "Repas libre";
-                gridHtml += '<div class="repas-block"><div class="repas-header"><span class="repas-nom" onclick="ouvrirIngredients(\'semaine\',' + sIdx + ',' + rIdx + ',\'\')">' + nomAffichage + '</span>';
-                gridHtml += '<select class="select-echange" onchange="changerRepas(' + sIdx + ',' + rIdx + ', this)"><option value="" disabled selected>🔄</option>';
-                extras.forEach((ex, exIdx) => { gridHtml += '<option value="' + exIdx + '">' + ex.nom + '</option>'; });
+                let spanId = `nom-${sIdx}-${rIdx}`, selectId = `sel-${sIdx}-${rIdx}`;
+                gridHtml += `<div class="repas-block"><div class="repas-header"><span class="repas-nom" id="${spanId}">${nomAffichage}</span>`;
+                gridHtml += `<select class="select-echange" id="${selectId}"><option value="" disabled selected>🔄</option>`;
+                extras.forEach((ex, exIdx) => { gridHtml += `<option value="${exIdx}">${ex.nom}</option>`; });
                 gridHtml += '</select></div></div>';
             });
-            gridHtml += '</div><button class="btn-epicerie" onclick="genererEpicerieSemaine(' + sIdx + ')">🛒 Liste d\'épicerie</button></div>';
+            gridHtml += `</div><button class="btn-epicerie" id="btn-epi-${sIdx}">🛒 Liste d'épicerie</button></div>`;
         });
         document.getElementById("menu-grid").innerHTML = gridHtml;
+        semaines.forEach((semaine, sIdx) => {
+            semaine.forEach((repas, rIdx) => {
+                document.getElementById(`nom-${sIdx}-${rIdx}`).addEventListener("click", () => ouvrirIngredients('semaine', sIdx, rIdx, ''));
+                document.getElementById(`sel-${sIdx}-${rIdx}`).addEventListener("change", (e) => changerRepas(sIdx, rIdx, e.target));
+            });
+            document.getElementById(`btn-epi-${sIdx}`).addEventListener("click", () => genererEpicerieSemaine(sIdx));
+        });
         let exHtml = "";
-        extras.forEach(ex => { if (ex && ex.nom) exHtml += '<div class="extra-item" onclick="ouvrirIngredients(\'extra\',0,0,\'' + ex.nom.replace(/'/g, "\\'") + '\')">' + ex.nom + '</div>'; });
+        extras.forEach((ex, exIdx) => { if (ex && ex.nom) exHtml += `<div class="extra-item" id="ex-${exIdx}">${ex.nom}</div>`; });
         document.getElementById("extras-liste").innerHTML = exHtml;
+        extras.forEach((ex, exIdx) => { if (ex && ex.nom) document.getElementById(`ex-${exIdx}`).addEventListener("click", () => ouvrirIngredients('extra', 0, 0, ex.nom)); });
     }
 
-    try {
-        let idSauve = localStorage.getItem("session_famille_id");
-        let emailSauve = localStorage.getItem("session_famille_email");
-        if (idSauve && emailSauve) {
-            identifiantFamille = idSauve; courrielFamille = emailSauve;
-            document.getElementById("ecran-connexion").style.display = "none";
-            document.getElementById("ecran-principal").style.display = "block";
-            // Correction : extraction du premier mot de la liste avant la mise en majuscule
-            let prenom = String(emailSauve).split("@")[0].toUpperCase();
-            document.getElementById("affichage-user").innerText = prenom;
-            chargerMenuDepuisCloud();
-        } else { document.getElementById("ecran-connexion").style.display = "block"; }
-    } catch(e) { document.getElementById("ecran-connexion").style.display = "block"; }
+    function initialiserSession() {
+        try {
+            let idSauve = localStorage.getItem("session_famille_id"), emailSauve = localStorage.getItem("session_famille_email");
+            if (idSauve && emailSauve) {
+                identifiantFamille = idSauve; courrielFamille = emailSauve;
+                document.getElementById("ecran-connexion").style.display = "none";
+                document.getElementById("ecran-principal").style.display = "block";
+                document.getElementById("affichage-user").innerText = String(emailSauve).split("@")[0].toUpperCase();
+                chargerMenuDepuisCloud();
+            } else { document.getElementById("ecran-connexion").style.display = "block"; }
+        } catch(e) { document.getElementById("ecran-connexion").style.display = "block"; }
+    }
 </script>
 </body>
 </html>
