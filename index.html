@@ -107,7 +107,6 @@
     const MASTER_KEY = "$2a$10$byE8Ka5bI4s4RgiwPxWSPeMjgc18UeBrHYommbd56GAcJzL95AZce";
     // -----------------------------------------------------------------
 
-
     let codeFamilleActif = "";
     let donneesFamille = { semaines: [], extras: [] };
     let typePlatSelectionne = "", sIdxSelectionne = 0, rIdxSelectionne = 0, extraPlatNomSelectionne = "";
@@ -158,20 +157,29 @@
             });
             if (rPlan.status === 404 || !rPlan.ok) {
                 donneesFamille.semaines = JSON.parse(JSON.stringify(REPAS_DE_BASE)); await sauvegarderPlanPrive();
-            } else { let jP = await rPlan.json(); donneesFamille.semaines = jP.record.semaines; }
+            } else { 
+                let jP = await rPlan.json(); 
+                // Correction de la lecture sécurisée du fichier
+                donneesFamille.semaines = jP.record ? jP.record.semaines : REPAS_DE_BASE; 
+            }
 
             let rExtras = await fetch("https://jsonbin.io", {
                 headers: { "X-Master-Key": MASTER_KEY, "X-Bin-Name": "catalogue-commun-extras" }
             });
             if (rExtras.status === 404 || !rExtras.ok) {
                 donneesFamille.extras = JSON.parse(JSON.stringify(EXTRAS_DE_SECOURS)); await sauvegarderExtrasCollectifs();
-            } else { let jE = await rExtras.json(); donneesFamille.extras = jE.record.extras; }
+            } else { 
+                let jE = await rExtras.json(); 
+                // Correction de la lecture sécurisée du catalogue commun
+                donneesFamille.extras = jE.record ? jE.record.extras : EXTRAS_DE_SECOURS; 
+            }
         } catch(err) {
             donneesFamille.semaines = JSON.parse(JSON.stringify(REPAS_DE_BASE));
             donneesFamille.extras = JSON.parse(JSON.stringify(EXTRAS_DE_SECOURS));
         }
         document.getElementById("loading").style.display = "none"; afficherInterface();
     }
+
 
 
 
