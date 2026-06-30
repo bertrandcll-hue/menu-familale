@@ -105,9 +105,8 @@
     // ACCÈS TECHNIQUE SÉCURISÉ JSONBIN :
     // -----------------------------------------------------------------
     const MASTER_KEY = "$2a$10$byE8Ka5bI4s4RgiwPxWSPeMjgc18UeBrHYommbd56GAcJzL95AZce";
+    const BIN_EXTRAS_COLLECTIF = "6a43fe04da38895dfe17486b";
     // -----------------------------------------------------------------
-
-    
 
     let codeFamilleActif = "";
     let donneesFamille = { semaines: [], extras: [] };
@@ -120,10 +119,6 @@
         [ {nom: "Boulette M&M", ing: ""}, {nom: "Fajitas", ing: ""}, {nom: "Saucisses dans le sirop", ing: ""}, {nom: "Casserole de thon", ing: ""} ],
         [ {nom: "Spaghetti", ing: ""}, {nom: "Poulet rouge", ing: ""}, {nom: "Épaule de porc", ing: ""}, {nom: "Macaroni à la viande", ing: ""} ],
         [ {nom: "Pâte au boeuf à la coréenne", ing: ""}, {nom: "Poulet Parmigiana", ing: ""}, {nom: "Pâte Carbonara", ing: ""}, {nom: "Mac & Cheese", ing: ""} ]
-    ];
-    const EXTRAS_DE_SECOURS = [
-        {nom: "Lasagne", ing: ""}, {nom: "Tortellini sauce rosée", ing: ""}, {nom: "Club sandwich", ing: ""}, 
-        {nom: "Vol-au-vent", ing: ""}, {nom: "Burritos Bowl", ing: ""}, {nom: "Quesedillas", ing: ""}
     ];
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -148,33 +143,31 @@
     }
 
     async function chargerMenuDepuisCloud() {
-        // Changement immédiat d'écran pour éviter de rester bloqué sur l'accueil
         document.getElementById("ecran-login").style.display = "none";
         document.getElementById("ecran-principal").style.display = "block";
         document.getElementById("affichage-code-actif").innerText = codeFamilleActif.toUpperCase();
         document.getElementById("loading").style.display = "block";
 
         try {
-            // Lecture du plan avec un système de rejet rapide si l'autorisation échoue
-            let rPlan = await fetch("https://jsonbin.io" + codeFamilleActif + "/latest", { headers: { "X-Master-Key": MASTER_KEY } });
-            if (rPlan.ok) {
-                let jP = await rPlan.json();
-                donneesFamille.semaines = jP.record ? jP.record.semaines : JSON.parse(JSON.stringify(REPAS_DE_BASE));
-            } else {
-                donneesFamille.semaines = JSON.parse(JSON.stringify(REPAS_DE_BASE));
-            }
+            // 1. Charger ou créer le plan de la famille sur une route de création automatique
+            let rPlan = await fetch("https://jsonbin.io", {
+                method: "GET",
+                headers: { "X-Master-Key": MASTER_KEY, "X-Bin-Name": "plan-" + codeFamilleActif }
+            });
+            
+            // Si la famille n'existe pas encore, jsonbin renvoie une erreur, on l'initialise localement
+            donneesFamille.semaines = JSON.parse(JSON.stringify(REPAS_DE_BASE));
 
-            let rExtras = await fetch("https://jsonbin.io", { headers: { "X-Master-Key": MASTER_KEY } });
+            // 2. Charger la banque collective d'extras (Partagée par tout le monde)
+            let rExtras = await fetch("https://jsonbin.io/" + BIN_EXTRAS_COLLECTIF + "/latest", {
+                headers: { "X-Master-Key": MASTER_KEY }
+            });
             if (rExtras.ok) {
                 let jE = await rExtras.json();
-                donneesFamille.extras = jE.record ? jE.record.extras : JSON.parse(JSON.stringify(EXTRAS_DE_SECOURS));
-            } else {
-                donneesFamille.extras = JSON.parse(JSON.stringify(EXTRAS_DE_SECOURS));
+                donneesFamille.extras = jE.record ? jE.record.extras : [];
             }
         } catch(err) {
-            // LE FILET DE SECOURS ACTIF : On charge les données locales si jsonbin bloque
-            donneesFamille.semaines = JSON.parse(JSON.stringify(REPAS_DE_BASE));
-            donneesFamille.extras = JSON.parse(JSON.stringify(EXTRAS_DE_SECOURS));
+            donneesFamille.extras = [ {nom: "Lasagne", ing: ""} ];
         }
         document.getElementById("loading").style.display = "none";
         afficherInterface();
@@ -184,11 +177,9 @@
 
 
 
-
-
-
         async function sauvegarderPlanPrive() {
         try {
+            // Création/Mise à jour automatique par nom de fichier jsonbin
             await fetch("https://jsonbin.io", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY, "X-Bin-Name": "plan-" + codeFamilleActif },
@@ -199,9 +190,10 @@
 
     async function sauvegarderExtrasCollectifs() {
         try {
-            await fetch("https://jsonbin.io", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY, "X-Bin-Name": "catalogue-commun-extras" },
+            // Envoi direct dans la banque partagée de tous les amis
+            await fetch("https://jsonbin.io/" + BIN_EXTRAS_COLLECTIF, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY },
                 body: JSON.stringify({ extras: donneesFamille.extras })
             });
         } catch(e) {}
@@ -211,7 +203,8 @@
         let nomInput = document.getElementById("nouveauRepasNom");
         let nom = nomInput.value.trim(); if (nom === "") return;
         donneesFamille.extras.push({ nom: nom, ing: "" }); nomInput.value = "";
-        afficherInterface(); await sauvegarderExtrasCollectifs();
+        afficherInterface(); 
+        await sauvegarderExtrasCollectifs();
     }
 
     async function changerRepas(sIdx, rIdx, select) {
@@ -219,7 +212,9 @@
         let actuelMenu = donneesFamille.semaines[sIdx][rIdx];
         donneesFamille.semaines[sIdx][rIdx] = donneesFamille.extras[extraIdx];
         donneesFamille.extras[extraIdx] = actuelMenu;
-        afficherInterface(); await sauvegarderPlanPrive(); await sauvegarderExtrasCollectifs();
+        afficherInterface(); 
+        await sauvegarderPlanPrive(); 
+        await sauvegarderExtrasCollectifs();
     }
 
     function ouvrirIngredients(type, s, r, nomPlat) {
@@ -285,7 +280,7 @@
         });
 
         let extrasHtml = "";
-        donneesFamille.extras.forEach((ex, exIdx) => { if (ex && ex.nom) extrasHtml += `<div class="extra-item" id="ex-${exIdx}">${ex.nom}</div>`; });
+        donneesFamille.extras.forEach((ex, exIdx) => { if (ex && ex.nom) extrasHtml += '<div class="extra-item" id="ex-${exIdx}">${ex.nom}</div>'; });
         document.getElementById("extras-liste").innerHTML = extrasHtml;
         donneesFamille.extras.forEach((ex, exIdx) => { if (ex && ex.nom) document.getElementById(`ex-${exIdx}`).addEventListener("click", () => ouvrirIngredients('extra', 0, 0, ex.nom)); });
     }
