@@ -125,10 +125,10 @@
     const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
     // -----------------------------------------------------------------
 
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let sessionUtilisateur = null;
+    let identifiantFamille = null;
+    let courrielFamille = "";
     let semaines = []; let extras = [];
     let typePlatSelectionne = ""; let sIdxSelectionne = 0, rIdxSelectionne = 0, extraPlatNomSelectionne = "";
 
@@ -141,59 +141,74 @@
         [ {nom: "Pâte au boeuf à la coréenne", ing: ""}, {nom: "Poulet Parmigiana", ing: ""}, {nom: "Pâte Carbonara", ing: ""}, {nom: "Mac & Cheese", ing: ""} ]
     ];
 
-    window.inscriptionFamille = async function() {
-        try {
-            let email = document.getElementById("reg-email").value.trim();
-            let pass = document.getElementById("reg-password").value;
-            if (!email || pass.length < 6) { alert("Le mot de passe doit contenir au moins 6 caractères."); return; }
-            
-            let { data, error } = await supabase.auth.signUp({ email: email, password: pass });
-            if (error) { alert("Erreur Supabase : " + error.message); return; }
-            
-            alert("Profil famille créé avec succès ! Bienvenue !");
-            // Connexion automatique immédiate après inscription
-            await supabase.auth.signInWithPassword({ email: email, password: pass });
-            location.reload();
-        } catch (err) {
-            alert("Erreur système : " + err.message);
-        }
-    };
-
     window.connexionFamille = async function() {
-        try {
-            let email = document.getElementById("login-email").value.trim();
-            let pass = document.getElementById("login-password").value;
-            let { data, error } = await supabase.auth.signInWithPassword({ email: email, password: pass });
-            if (error) { alert("Erreur de connexion : " + error.message); return; }
-            location.reload();
-        } catch (err) {
-            alert("Erreur système : " + err.message);
+        let email = document.getElementById("login-email").value.trim().toLowerCase();
+        let pass = document.getElementById("login-password").value;
+        if (!email || pass.length < 4) { alert("Veuillez entrer un courriel et un mot de passe (min 4 caractères)."); return; }
+        
+        document.getElementById("loading").style.display = "block";
+        
+        // 1. Tenter de chercher si la famille existe déjà
+        let { data, error } = await supabase.from('comptes_familles').select('*').eq('courriel', email);
+        
+        if (data && data.length > 0) {
+            // Le compte existe : on vérifie le mot de passe
+            let famille = data[0];
+            if (famille.mot_de_passe !== pass) {
+                alert("Mot de passe incorrect pour cette famille.");
+                document.getElementById("loading").style.display = "none";
+                return;
+            }
+            ouvrirSession(famille.id, famille.courriel);
+        } else {
+            // Le compte n'existe pas : on le crée de façon transparente en une fraction de seconde
+            let { data: nouveauCompte, error: errIns } = await supabase.from('comptes_familles').insert([{ courriel: email, mot_de_passe: pass ]).select();
+            if (errIns || !nouveauCompte || nouveauCompte.length === 0) {
+                alert("Erreur lors de la création de l'espace famille.");
+                document.getElementById("loading").style.display = "none";
+                return;
+            }
+            alert("✨ Bienvenue ! Votre nouvel espace famille privé a été initialisé.");
+            ouvrirSession(nouveauCompte[0].id, nouveauCompte[0].courriel);
         }
     };
 
-    window.deconnexion = async function() {
-        await supabase.auth.signOut();
+    function ouvrirSession(id, email) {
+        try {
+            localStorage.setItem("session_famille_id", id);
+            localStorage.setItem("session_famille_email", email);
+        } catch(e) {}
+        location.reload();
+    }
+
+    window.deconnexion = function() {
+        try {
+            localStorage.removeItem("session_famille_id");
+            localStorage.removeItem("session_famille_email");
+        } catch(e) {}
         location.reload();
     };
 
-    async function initialiserSession() {
-        let { data } = await supabase.auth.getSession();
-        if (data && data.session) {
-            sessionUtilisateur = data.session.user;
-            document.getElementById("ecran-connexion").style.display = "none";
-            document.getElementById("ecran-inscription").style.display = "none";
-            document.getElementById("ecran-principal").style.display = "block";
-            
-            // Correction de découpage de l'adresse courriel
-            let bouts = sessionUtilisateur.email.split("@");
-            document.getElementById("affichage-user").innerText = bouts[0].toUpperCase();
-            chargerMenuDepuisCloud();
-        }
+    function initialiserSession() {
+        try {
+            let idSauve = localStorage.getItem("session_famille_id");
+            let emailSauve = localStorage.getItem("session_famille_email");
+            if (idSauve && emailSauve) {
+                identifiantFamille = idSauve;
+                courrielFamille = emailSauve;
+                document.getElementById("ecran-connexion").style.display = "none";
+                document.getElementById("ecran-principal").style.display = "block";
+                document.getElementById("affichage-user").innerText = emailSauve.split("@")[0].toUpperCase();
+                chargerMenuDepuisCloud();
+                return;
+            }
+        } catch(e) {}
+        document.getElementById("ecran-connexion").style.display = "block";
     }
     async function chargerMenuDepuisCloud() {
         document.getElementById("loading").style.display = "block";
         
-        let { data: planFamille } = await supabase.from('plans_familles').select('*').eq('user_id', sessionUtilisateur.id).order('semaine_num', { ascending: true });
+        let { data: planFamille } = await supabase.from('plans_familles').select('*').eq('user_id', identifiantFamille).order('semaine_num', { ascending: true });
         let { data: banqueExtras } = await supabase.from('extras_partages').select('*');
 
         extras = banqueExtras ? banqueExtras.map(e => ({ nom: e.repas_nom, ing: e.ingrédients })) : [];
@@ -207,7 +222,7 @@
             });
             for(let s=0; s<6; s++) {
                 for(let r=0; r<4; r++) {
-                    await supabase.from('plans_familles').insert([{ user_id: sessionUtilisateur.id, ...semaines[s][r] }]);
+                    await supabase.from('plans_familles').insert([{ user_id: identifiantFamille, semaine_num: s+1, repas_index: r, repas_nom: semaines[s][r].nom, ingrédients: semaines[s][r].ing }]);
                 }
             }
         } else {
@@ -237,7 +252,7 @@
         let extraIdx = select.value; if (extraIdx === "") return;
         let nouveauRepas = extras[extraIdx];
 
-        await supabase.from('plans_familles').update({ repas_nom: nouveauRepas.nom, ingrédients: nouveauRepas.ing }).match({ user_id: sessionUtilisateur.id, semaine_num: sIdx + 1, repas_index: rIdx });
+        await supabase.from('plans_familles').update({ repas_nom: nouveauRepas.nom, ingrédients: nouveauRepas.ing }).match({ user_id: identifiantFamille, semaine_num: sIdx + 1, repas_index: rIdx });
         chargerMenuDepuisCloud();
     };
 
@@ -253,7 +268,7 @@
         let txt = document.getElementById("modal-texte").value.trim();
         if (typePlatSelectionne === "semaine") {
             semaines[sIdxSelectionne][rIdxSelectionne].ing = txt;
-            await supabase.from('plans_familles').update({ ingrédients: txt }).match({ user_id: sessionUtilisateur.id, semaine_num: sIdxSelectionne + 1, repas_index: rIdxSelectionne });
+            await supabase.from('plans_familles').update({ ingrédients: txt }).match({ user_id: identifiantFamille, semaine_num: sIdxSelectionne + 1, repas_index: rIdxSelectionne });
         } else {
             await supabase.from('extras_partages').update({ ingrédients: txt }).eq('repas_nom', extraPlatNomSelectionne);
         }
