@@ -116,6 +116,7 @@
     const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
     // -----------------------------------------------------------------
 
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let sessionUtilisateur = null;
@@ -166,11 +167,11 @@
             document.getElementById("ecran-connexion").style.display = "none";
             document.getElementById("ecran-inscription").style.display = "none";
             document.getElementById("ecran-principal").style.display = "block";
-            document.getElementById("affichage-user").innerText = sessionUtilisateur.email.split("@")[0].toUpperCase();
+            let nomAffiche = sessionUtilisateur.email.split("@")[0].toUpperCase();
+            document.getElementById("affichage-user").innerText = nomAffiche;
             chargerMenuDepuisCloud();
         }
     }
-
     async function chargerMenuDepuisCloud() {
         document.getElementById("loading").style.display = "block";
         
@@ -216,7 +217,6 @@
 
     window.changerRepas = async function(sIdx, rIdx, select) {
         let extraIdx = select.value; if (extraIdx === "") return;
-        let actuelMenu = semaines[sIdx][rIdx];
         let nouveauRepas = extras[extraIdx];
 
         await supabase.from('plans_familles').update({ repas_nom: nouveauRepas.nom, ingrédients: nouveauRepas.ing }).match({ user_id: sessionUtilisateur.id, semaine_num: sIdx + 1, repas_index: rIdx });
