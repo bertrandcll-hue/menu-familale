@@ -142,21 +142,33 @@
     ];
 
     window.inscriptionFamille = async function() {
-        let email = document.getElementById("reg-email").value.trim();
-        let pass = document.getElementById("reg-password").value;
-        if (!email || pass.length < 6) { alert("Format invalide (mot de passe min 6 caractères)."); return; }
-        let { data, error } = await supabase.auth.signUp({ email: email, password: pass });
-        if (error) { alert("Erreur d'inscription : " + error.message); return; }
-        alert("Compte famille créé ! Bienvenue.");
-        location.reload();
+        try {
+            let email = document.getElementById("reg-email").value.trim();
+            let pass = document.getElementById("reg-password").value;
+            if (!email || pass.length < 6) { alert("Le mot de passe doit contenir au moins 6 caractères."); return; }
+            
+            let { data, error } = await supabase.auth.signUp({ email: email, password: pass });
+            if (error) { alert("Erreur Supabase : " + error.message); return; }
+            
+            alert("Profil famille créé avec succès ! Bienvenue !");
+            // Connexion automatique immédiate après inscription
+            await supabase.auth.signInWithPassword({ email: email, password: pass });
+            location.reload();
+        } catch (err) {
+            alert("Erreur système : " + err.message);
+        }
     };
 
     window.connexionFamille = async function() {
-        let email = document.getElementById("login-email").value.trim();
-        let pass = document.getElementById("login-password").value;
-        let { data, error } = await supabase.auth.signInWithPassword({ email: email, password: pass });
-        if (error) { alert("Erreur : " + error.message); return; }
-        location.reload();
+        try {
+            let email = document.getElementById("login-email").value.trim();
+            let pass = document.getElementById("login-password").value;
+            let { data, error } = await supabase.auth.signInWithPassword({ email: email, password: pass });
+            if (error) { alert("Erreur de connexion : " + error.message); return; }
+            location.reload();
+        } catch (err) {
+            alert("Erreur système : " + err.message);
+        }
     };
 
     window.deconnexion = async function() {
@@ -171,8 +183,10 @@
             document.getElementById("ecran-connexion").style.display = "none";
             document.getElementById("ecran-inscription").style.display = "none";
             document.getElementById("ecran-principal").style.display = "block";
-            let nomAffiche = sessionUtilisateur.email.split("@").toUpperCase();
-            document.getElementById("affichage-user").innerText = nomAffiche;
+            
+            // Correction de découpage de l'adresse courriel
+            let bouts = sessionUtilisateur.email.split("@");
+            document.getElementById("affichage-user").innerText = bouts[0].toUpperCase();
             chargerMenuDepuisCloud();
         }
     }
@@ -193,13 +207,12 @@
             });
             for(let s=0; s<6; s++) {
                 for(let r=0; r<4; r++) {
-                    await supabase.from('plans_familles').insert([{ user_id: sessionUtilisateur.id, semaine_num: s+1, repas_index: r, repas_nom: semaines[s][r].nom, ingrédients: semaines[s][r].ing }]);
+                    await supabase.from('plans_familles').insert([{ user_id: sessionUtilisateur.id, ...semaines[s][r] }]);
                 }
             }
         } else {
             planFamille.forEach(row => {
                 if (!semaines[row.semaine_num - 1]) semaines[row.semaine_num - 1] = [];
-                // CORRECTION TECHNIQUE APPLIQUÉE ICI : Variable certifiée listeIng
                 semaines[row.semaine_num - 1][row.repas_index] = { nom: row.repas_nom, ing: row.ingrédients };
             });
         }
