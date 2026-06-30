@@ -47,27 +47,21 @@
 </head>
 
 
+
+
+
+    
 <body>
-<!-- Écran 1 : Connexion -->
+<!-- Un seul écran d'accès transparent (Inscription et Connexion combinées) -->
 <div id="ecran-connexion" class="auth-box">
-    <h2 style="margin: 0; color: #2c3e50;">🍽️ Connexion Famille</h2>
+    <h2 style="margin: 0; color: #2c3e50;">🍽️ Accès Planificateur</h2>
+    <p style="font-size: 13px; color: #7f8c8d; margin-top: 5px;">Entrez votre courriel et votre mot de passe habituels. S'il s'agit de votre première visite, votre espace sera créé automatiquement.</p>
     <input type="email" id="login-email" placeholder="Adresse courriel de la famille">
     <input type="password" id="login-password" placeholder="Mot de passe">
     <button class="btn-auth" onclick="connexionFamille()">Ouvrir mon planificateur</button>
-    <div class="toggle-link" onclick="basculerEcran('inscription')">Pas de compte ? Créer un profil famille</div>
 </div>
 
-<!-- Écran 2 : Inscription -->
-<div id="ecran-inscription" class="auth-box" style="display: none;">
-    <h2 style="margin: 0; color: #27ae60;">➕ Créer un Profil Famille</h2>
-    <p style="font-size:12px; color:#7f8c8d; margin:5px 0;">Chaque famille aura son menu privé, mais la banque d'extras sera partagée !</p>
-    <input type="email" id="reg-email" placeholder="Adresse courriel (ex: famille@test.com)">
-    <input type="password" id="reg-password" placeholder="Mot de passe (min 6 caractères)">
-    <button class="btn-auth" style="background-color: #27ae60;" onclick="inscriptionFamille()">Créer notre compte</button>
-    <div class="toggle-link" onclick="basculerEcran('connexion')">Déjà inscrits ? Se connecter ici</div>
-</div>
-
-<!-- Écran 3 : L'application Principale -->
+<!-- L'application Principale -->
 <div id="ecran-principal" class="container" style="display: none;">
     <div class="logout-zone">
         <span>👋 Bienvenue, <strong id="affichage-user">Famille</strong></span>
@@ -103,15 +97,8 @@
     </div>
 </div>
 
-<!-- SCRIPT CLASSIQUE POUR LE BASCULEMENT DES ÉCRANS -->
-<script>
-    window.basculerEcran = function(cible) {
-        document.getElementById("ecran-connexion").style.display = cible === "connexion" ? "block" : "none";
-        document.getElementById("ecran-inscription").style.display = cible === "inscription" ? "block" : "none";
-    };
-</script>
 
-
+    
     
 
 
@@ -144,32 +131,34 @@
     window.connexionFamille = async function() {
         let email = document.getElementById("login-email").value.trim().toLowerCase();
         let pass = document.getElementById("login-password").value;
-        if (!email || pass.length < 4) { alert("Veuillez entrer un courriel et un mot de passe (min 4 caractères)."); return; }
+        if (!email || pass.length < 4) { alert("Veuillez entrer un courriel et un mot de passe valides (min 4 caractères)."); return; }
         
         document.getElementById("loading").style.display = "block";
         
-        // 1. Tenter de chercher si la famille existe déjà
-        let { data, error } = await supabase.from('comptes_familles').select('*').eq('courriel', email);
-        
-        if (data && data.length > 0) {
-            // Le compte existe : on vérifie le mot de passe
-            let famille = data[0];
-            if (famille.mot_de_passe !== pass) {
-                alert("Mot de passe incorrect pour cette famille.");
-                document.getElementById("loading").style.display = "none";
-                return;
+        try {
+            let { data, error } = await supabase.from('comptes_familles').select('*').eq('courriel', email);
+            
+            if (data && data.length > 0) {
+                let famille = data[0];
+                if (famille.mot_de_passe !== pass) {
+                    alert("Mot de passe incorrect pour cette famille.");
+                    document.getElementById("loading").style.display = "none";
+                    return;
+                }
+                ouvrirSession(famille.id, famille.courriel);
+            } else {
+                let { data: nouveauCompte, error: errIns } = await supabase.from('comptes_familles').insert([{ courriel: email, mot_de_passe: pass }]).select();
+                if (errIns || !nouveauCompte || nouveauCompte.length === 0) {
+                    alert("Erreur lors de la création de l'espace famille.");
+                    document.getElementById("loading").style.display = "none";
+                    return;
+                }
+                alert("✨ Bienvenue ! Votre nouvel espace famille privé a été initialisé.");
+                ouvrirSession(nouveauCompte[0].id, nouveauCompte[0].courriel);
             }
-            ouvrirSession(famille.id, famille.courriel);
-        } else {
-            // Le compte n'existe pas : on le crée de façon transparente en une fraction de seconde
-            let { data: nouveauCompte, error: errIns } = await supabase.from('comptes_familles').insert([{ courriel: email, mot_de_passe: pass ]).select();
-            if (errIns || !nouveauCompte || nouveauCompte.length === 0) {
-                alert("Erreur lors de la création de l'espace famille.");
-                document.getElementById("loading").style.display = "none";
-                return;
-            }
-            alert("✨ Bienvenue ! Votre nouvel espace famille privé a été initialisé.");
-            ouvrirSession(nouveauCompte[0].id, nouveauCompte[0].courriel);
+        } catch (err) {
+            alert("Erreur réseau : " + err.message);
+            document.getElementById("loading").style.display = "none";
         }
     };
 
