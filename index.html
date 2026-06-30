@@ -2,202 +2,286 @@
 <html lang="fr-CA">
 <head>
     <meta charset="UTF-8">
-    <title>Mon Planificateur de Soupers de Famille</title>
+    <!-- LA LIGNE MAGIQUE QUI REND LE SITE GROS ET LISIBLE SUR CELLULAIRE -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notre Planificateur de Soupers 🍽️</title>
     <style>
-        body { font-family: sans-serif; background-color: #f0f4f8; padding: 20px; color: #333; }
-        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; }
-        .instruction { text-align: center; color: #7f8c8d; margin-bottom: 25px; font-size: 14px; }
+        body { font-family: sans-serif; background-color: #f0f4f8; padding: 10px; color: #333; margin: 0; }
+        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; font-size: 22px; }
+        .instruction { text-align: center; color: #7f8c8d; margin-bottom: 25px; font-size: 13px; padding: 0 10px; }
         
-        .ajout-section {
-            background: #ebf5fb; padding: 15px; border-radius: 8px; margin: 20px auto;
-            max-width: 650px; border: 1px solid #a9cce3; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center;
-        }
-        .ajout-section input, .ajout-section select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        .ajout-section input { flex: 1; min-width: 200px; }
-        .btn-ajouter { padding: 10px 15px; background-color: #2980b9; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .btn-ajouter:hover { background-color: #21618c; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .card { background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #ddd; border-top: 4px solid #3498db; }
+        .ajout-section { background: #ebf5fb; padding: 15px; border-radius: 8px; margin: 20px auto; max-width: 650px; border: 1px solid #a9cce3; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .ajout-section input { padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; min-width: 200px; flex: 1; }
+        .btn-ajouter { padding: 12px 15px; background-color: #2980b9; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .btn-melanger { padding: 12px 15px; background-color: #27ae60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .btn-melanger:hover { background-color: #1e8449; }
+        
+        /* Grille adaptative : 1 seule colonne sur cell, plusieurs sur ordi */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .card { background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #ddd; border-top: 4px solid #3498db; display: flex; flex-direction: column; justify-content: space-between; }
         .card-extra { border-top: 4px solid #f39c12; background: #fffcf7; }
-        h3 { margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        h3 { margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 18px; }
         
-        .repas-block { background: #f1f7fc; margin: 10px 0; padding: 10px 12px; border-radius: 6px; }
-        .repas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 5px; }
+        /* Blocs plus gros sur cell pour cliquer facilement avec le pouce */
+        .repas-block { background: #f1f7fc; margin: 12px 0; padding: 14px 12px; border-radius: 6px; border-left: 4px solid #2980b9; }
+        .repas-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .select-echange { font-size: 14px; padding: 6px; border-radius: 4px; border: 1px solid #f39c12; background-color: #fff8ee; color: #d35400; cursor: pointer; }
+        .btn-epicerie { padding: 12px; background-color: #34495e; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; margin-top: 10px; width: 100%; text-align: center; }
         
-        .type { font-size: 10px; font-weight: bold; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: white; }
-        .cat-bœuf { background-color: #c0392b; }
-        .cat-poulet { background-color: #f1c40f; color: #2c3e50; }
-        .cat-porc { background-color: #e67e22; }
-        .cat-poisson { background-color: #2980b9; }
-        .cat-pâte { background-color: #27ae60; }
-
-        .select-cat { font-size: 11px; padding: 1px 2px; border-radius: 4px; border: 1px solid #bdc3c7; background-color: #fff; color: #33495e; cursor: pointer; }
-        .select-echange { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: 1px solid #f39c12; background-color: #fff8ee; color: #d35400; cursor: pointer; }
-        
-        .repas-nom { color: #2980b9; font-weight: bold; font-size: 15px; margin-top: 5px; cursor: pointer; display: inline-block; }
-        .repas-nom:hover { color: #1a5276; text-decoration: underline; }
-        
+        .repas-nom { color: #2980b9; font-weight: bold; font-size: 16px; cursor: pointer; flex: 1; word-break: break-word; }
         .extra-box { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-        .extra-item-wrapper { display: flex; flex-direction: column; gap: 4px; background: #fff3e0; padding: 10px; border-radius: 6px; text-align: center; }
-        .extra-item { color: #e65100; font-weight: bold; cursor: pointer; }
-        .extra-badge { font-size: 9px; text-transform: uppercase; font-weight: bold; color: #7f8c8d; margin-top: 2px; }
-
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-box { background: white; margin: 12% auto; padding: 25px; width: 85%; max-width: 500px; border-radius: 10px; }
-        textarea { width: 100%; height: 200px; margin-top: 12px; padding: 10px; box-sizing: border-box; }
-        .btn { padding: 10px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .btn:hover { background: #219653; }
-        .btn-close { background: #95a5a6; float: right; padding: 6px 12px; border: none; color: white; border-radius: 4px; cursor: pointer; }
+        .extra-item { background: #fff3e0; padding: 12px 15px; border-radius: 6px; border: 1px solid #ffe0b2; font-weight: bold; color: #e65100; min-width: 120px; text-align: center; cursor: pointer; font-size: 15px; flex: 1; }
         
-        .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 18px; padding: 20px; }
+        .loading-text { text-align: center; font-weight: bold; color: #7f8c8d; font-size: 16px; padding: 10px; }
+        .admin-zone { text-align: center; margin-top: 40px; padding-top: 15px; border-top: 1px solid #eee; font-size: 14px; color: #95a5a6; }
+        .admin-zone input { padding: 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; max-width: 180px; text-align: center; margin-top: 5px; }
+        .badge-mode { font-size: 12px; font-weight: bold; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
+        
+        /* Fenêtres modales adaptées aux petits écrans */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-box { background: white; margin: 15% auto; padding: 20px; width: 90%; max-width: 450px; border-radius: 10px; box-sizing: border-box; }
+        .modal-box textarea { width: 100%; height: 200px; margin-top: 12px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; resize: none; }
+        .btn-action { padding: 12px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 15px; width: 100%; }
+        .btn-close { background: #95a5a6; float: right; padding: 8px 14px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .liste-resume { background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #eee; margin-top: 15px; max-height: 300px; overflow-y: auto; text-align: left; font-size: 15px; line-height: 1.6; white-space: pre-line; }
     </style>
 </head>
-<body>
 
+<body>
 <div class="container">
     <h1>Planificateur de Soupers de Famille 🍽️</h1>
-    <p class="instruction">Modifiez la catégorie d'un plat ou utilisez le menu orange à droite pour faire un échange avec un extra.</p>
+    <div style="text-align: center;"><span id="statut-badge" class="badge-mode mode-lecture">🔒 Mode Lecture Seule</span></div>
+    <p class="instruction">Cliquez sur un repas pour voir ses ingrédients. Utilisez le bouton d'épicerie pour lister la semaine.</p>
     
-    <div class="ajout-section">
+    <div id="zone-edition-haut" class="ajout-section" style="display: none;">
         <input type="text" id="nouveauRepasNom" placeholder="Nom du repas (ex: Vol-au-vent)">
-        <select id="nouveauRepasProteine">
-            <option value="bœuf">Bœuf</option>
-            <option value="poulet">Poulet</option>
-            <option value="porc">Porc</option>
-            <option value="poisson">Poisson</option>
-            <option value="pâte">Pâte</option>
-        </select>
-        <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter à la base de données</button>
+        <button class="btn-ajouter" onclick="ajouterNouveauRepas()">➕ Ajouter</button>
+        <button class="btn-melanger" onclick="melangerToutLeMenu()">🎲 Mélanger tout le menu</button>
     </div>
-    
-    <div id="loading" class="loading-text">🔄 Synchronisation avec le cloud familial en cours...</div>
+
+    <div id="loading" class="loading-text">🔄 Synchronisation en direct avec Google Sheets...</div>
     <div id="menu-grid" class="grid"></div>
-
-    <div class="card card-extra">
-        <h3>Repas en extra (Disponibles pour remplacement)</h3>
-        <div id="extras-liste" class="extra-box"></div>
-    </div>
+    <div class="card card-extra"><h3>Repas en extra (Disponibles pour remplacement)</h3><div id="extras-liste" class="extra-box"></div></div>
+    
+    <div class="admin-zone">🔑 Section Administrateur : <br><input type="password" id="mot-de-passe" placeholder="Mot de passe secret" oninput="verifierMotDePasse()"></div>
 </div>
 
-<div id="box" class="modal">
+<div id="box-ingredients" class="modal">
     <div class="modal-box">
-        <button class="btn-close" onclick="fermer()">Fermer</button>
-        <h2 id="titre" style="margin-top: 0; color: #2c3e50;">Recette</h2>
-        <textarea id="texte" placeholder="Écrivez les ingrédients..."></textarea>
-        <br><br>
-        <button class="btn" onclick="sauver()">Sauvegarder pour toute la famille</button>
+        <button class="btn-close" onclick="fermerFenetre()">Fermer</button>
+        <h2 id="modal-titre" style="margin-top: 0; color: #2c3e50;">Ingrédients</h2>
+        <textarea id="modal-texte" placeholder="Aucun ingrédient inscrit..."></textarea>
+        <button id="btn-sauver-recette" class="btn-action" onclick="sauverIngredients()" style="display: none;">💾 Enregistrer la liste</button>
     </div>
 </div>
+
+<div id="box-epicerie" class="modal">
+    <div class="modal-box">
+        <button class="btn-close" onclick="fermerEpicerie()">Fermer</button>
+        <h2 id="epicerie-titre" style="margin-top: 0; color: #2c3e50;">🛒 Liste d'épicerie</h2>
+        <div id="epicerie-corps" class="liste-resume"></div>
+    </div>
+</div>
+
+
+
+
+
+
 
 <script>
-    // -----------------------------------------------------------------
-    // CONFIGURATION DE VOTRE BOÎTE CLOUD JSONBIN
-    // -----------------------------------------------------------------
-    const BIN_ID = "6a3c31eeda38895dfef92c38";
-    const MASTER_KEY = "$2a$10$byE8Ka5bI4s4RgiwPxWSPeMjgc18UeBrHYommbd56GAcJzL95AZce";
-    // -----------------------------------------------------------------
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzuHQxhf5pMwDDjrGy-ZFEdA9v9Qs2IAO91zF0mkGnVvkGBHGR1MQ1RBAZnEtKxvqTm/exec";
+    const HASH_SECRET = "ef9ebd2c0926868dfd04cd4f387db2faedbda62db496929c5a14d56f5cd9a7b6";
 
-    let donneesGlobales = { semaines: [], extras: [], recettes: {} };
-    let platChoisi = "";
 
-    const urlBin = "https://jsonbin.io" + BIN_ID;
-    const entetes = {
-        "Content-Type": "application/json",
-        "X-Master-Key": MASTER_KEY
-    };
+    let semaines = []; let extras = []; let estAdmin = false;
+    let typePlatSelectionne = ""; let sIdxSelectionne = 0, rIdxSelectionne = 0, extraIdxSelectionne = 0;
+
+    const REPAS_DE_BASE = [
+        [ {nom: "Pâté chinois", ing: ""}, {nom: "Poulet entier", ing: ""}, {nom: "Belogne rôti", ing: ""}, {nom: "Poke Bowl", ing: ""} ],
+        [ {nom: "Sloppy Joe", ing: ""}, {nom: "Général Tao", ing: ""}, {nom: "Patate au jambon", ing: ""}, {nom: "Filet de poisson pané", ing: ""} ],
+        [ {nom: "Steak haché en sauce", ing: ""}, {nom: "Burger poulet", ing: ""}, {nom: "Filet de porc", ing: ""}, {nom: "Guedille thon", ing: ""} ],
+        [ {nom: "Boulette M&M", ing: ""}, {nom: "Fajitas", ing: ""}, {nom: "Saucisses dans le sirop", ing: ""}, {nom: "Casserole de thon", ing: ""} ],
+        [ {nom: "Spaghetti", ing: ""}, {nom: "Poulet rouge", ing: ""}, {nom: "Épaule de porc", ing: ""}, {nom: "Macaroni à la viande", ing: ""} ],
+        [ {nom: "Pâte au boeuf à la coréenne", ing: ""}, {nom: "Poulet Parmigiana", ing: ""}, {nom: "Pâte Carbonara", ing: ""}, {nom: "Mac & Cheese", ing: ""} ]
+    ];
+    const EXTRAS_DE_BASE = [
+        {nom: "Lasagne", ing: ""}, {nom: "Tortellini sauce rosée", ing: ""}, {nom: "Club sandwich", ing: ""}, 
+        {nom: "Vol-au-vent", ing: ""}, {nom: "Burritos Bowl", ing: ""}, {nom: "Quesedillas", ing: ""}
+    ];
+
+    semaines = JSON.parse(JSON.stringify(REPAS_DE_BASE));
+    extras = JSON.parse(JSON.stringify(EXTRAS_DE_BASE));
+
+    try { if (localStorage.getItem("planificateur_admin") === "oui") estAdmin = true; } catch(e) {}
 
     async function connecterEtCharger() {
         try {
             document.getElementById("loading").style.display = "block";
+            let res = await fetch(GOOGLE_SCRIPT_URL);
+            let rows = await res.json();
             
-            let res = await fetch(urlBin + "/latest", { headers: entetes });
-            if (!res.ok) {
-                alert("Erreur de connexion cloud. Vérifiez vos clés JSONBin.");
-                return;
+            if (rows && rows.length > 0) {
+                let tempSemaines = [ [], [], [], [], [], [] ];
+                let tempExtras = []; let donneesValides = false;
+
+                rows.forEach(row => {
+                    if (row && row.length >= 4) {
+                        let cat = String(row).trim().toLowerCase();
+                        let nomPlat = String(row);
+                        let listeIng = row.length >= 5 ? String(row) : "";
+
+                        if (cat === "semaine") {
+                            let sIdx = parseInt(row) - 1; let rIdx = parseInt(row);
+                            if (sIdx >= 0 && sIdx < 6 && rIdx >= 0 && rIdx < 4 && nomPlat) {
+                                if (!tempSemaines[sIdx]) tempSemaines[sIdx] = [];
+                                tempSemaines[sIdx][rIdx] = { nom: nomPlat, ing: listeIng };
+                                donneesValides = true;
+                            }
+                        } else if (cat === "extra") {
+                            if (nomPlat && nomPlat !== "undefined" && nomPlat !== "0") {
+                                tempExtras.push({ nom: nomPlat, ing: listeIng });
+                                donneesValides = true;
+                            }
+                        }
+                    }
+                });
+
+                if (donneesValides) {
+                    for (let i = 0; i < 6; i++) {
+                        if (!tempSemaines[i] || tempSemaines[i].length < 4) {
+                            tempSemaines[i] = JSON.parse(JSON.stringify(REPAS_DE_BASE[i]));
+                        }
+                    }
+                    semaines = tempSemaines; if (tempExtras.length > 0) extras = tempExtras;
+                }
             }
+        } catch(e) {}
+        document.getElementById("loading").style.display = "none";
+        afficherInterface();
+    }
 
-            let reponseJson = await res.json();
-            donneesGlobales = reponseJson.record;
-
-            document.getElementById("loading").style.display = "none";
-            afficherInterface();
-        } catch(err) {
-            alert("Erreur réseau : " + err.message);
+    async function verifierMotDePasse() {
+        let saisie = document.getElementById("mot-de-passe").value;
+        if (saisie.length < 3) return;
+        let encoder = new TextEncoder(); let data = encoder.encode(saisie);
+        let buffer = await crypto.subtle.digest("SHA-256", data);
+        let hashArray = Array.from(new Uint8Array(buffer));
+        let hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+        
+        if (hashHex === HASH_SECRET) {
+            estAdmin = true;
+            try { localStorage.setItem("planificateur_admin", "oui"); } catch(e) {}
+            document.getElementById("mot-de-passe").value = ""; afficherInterface();
         }
     }
 
     async function pousserVersCloud() {
-        await fetch(urlBin, {
-            method: "PUT",
-            headers: entetes,
-            body: JSON.stringify(donneesGlobales)
-        });
+        if (!estAdmin) return;
+        let payload = { semaines: semaines, extras: extras };
+        await fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
         connecterEtCharger();
     }
 
     function ajouterNouveauRepas() {
         let nomInput = document.getElementById("nouveauRepasNom");
-        let catSelect = document.getElementById("nouveauRepasProteine");
-        let nom = nomInput.value.trim();
-        let cat = catSelect.value;
-        if (nom === "") return;
+        if (nomInput.value.trim() === "" || !estAdmin) return;
+        extras.push({ nom: nomInput.value.trim(), ing: "" });
+        nomInput.value = ""; pousserVersCloud();
+    }
 
-        donneesGlobales.extras.push({ type: cat, nom: nom });
-        nomInput.value = "";
+    function melangerToutLeMenu() {
+        if (!estAdmin || !confirm("Voulez-vous mélanger aléatoirement tous vos repas ?")) return;
+        let tous = [];
+        semaines.forEach(s => s.forEach(r => { if(r&&r.nom) tous.push(r); }));
+        extras.forEach(e => { if(e&&e.nom) tous.push(e); });
+        for (let i = tous.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let temp = tous[i]; tous[i] = tous[j]; tous[j] = temp;
+        }
+        let idx = 0;
+        for (let s = 0; s < 6; s++) {
+            for (let r = 0; r < 4; r++) {
+                if (idx < tous.length) { semaines[s][r] = tous[idx]; idx++; }
+            }
+        }
+        let nEx = []; while (idx < tous.length) { nEx.push(tous[idx]); idx++; }
+        extras = nEx; pousserVersCloud();
+    }
+
+    function changerRepas(sIdx, rIdx, select) {
+        if (!estAdmin) return;
+        let extraIdx = select.value; if (extraIdx === "") return;
+        let actuelMenu = semaines[sIdx][rIdx];
+        semaines[sIdx][rIdx] = extras[extraIdx]; extras[extraIdx] = actuelMenu;
         pousserVersCloud();
     }
 
-    function changerCategorie(semaineIdx, repasIdx, selectElement) {
-        donneesGlobales.semaines[semaineIdx][repasIdx].type = selectElement.value;
-        pousserVersCloud();
+    function ouvrirIngredients(type, s, r, exIdx) {
+        typePlatSelectionne = type; sIdxSelectionne = s; rIdxSelectionne = r; extraIdxSelectionne = exIdx;
+        let plat = (type === "semaine") ? semaines[s][r] : extras[exIdx];
+        document.getElementById("modal-titre").innerText = plat.nom;
+        document.getElementById("modal-texte").value = plat.ing || "";
+        document.getElementById("modal-texte").readOnly = !estAdmin;
+        document.getElementById("btn-sauver-recette").style.display = estAdmin ? "inline-block" : "none";
+        document.getElementById("box-ingredients").style.display = "block";
     }
 
-    function changerRepas(semaineIdx, repasIdx, selectElement) {
-        let extraIdx = selectElement.value;
-        if (extraIdx === "") return;
-
-        let repasMenuActuel = donneesGlobales.semaines[semaineIdx][repasIdx];
-        let repasExtraChoisi = donneesGlobales.extras[extraIdx];
-
-        donneesGlobales.semaines[semaineIdx][repasIdx] = repasExtraChoisi;
-        donneesGlobales.extras[extraIdx] = repasMenuActuel;
-
-        pousserVersCloud();
+    function sauverIngredients() {
+        let txt = document.getElementById("modal-texte").value.trim();
+        if (typePlatSelectionne === "semaine") { semaines[sIdxSelectionne][rIdxSelectionne].ing = txt; } 
+        else { extras[extraIdxSelectionne].ing = txt; }
+        fermerFenetre(); pousserVersCloud();
     }
 
-    function ouvrir(nom) {
-        platChoisi = nom;
-        document.getElementById("titre").innerText = nom;
-        
-        let texteRecette = donneesGlobales.recettes[nom] || "";
-        document.getElementById("texte").value = texteRecette ? texteRecette : "Ingrédients :\n- \n\nInstructions :\n1. ";
-        document.getElementById("box").style.display = "block";
+    function genererEpicerieSemaine(sIdx) {
+        document.getElementById("epicerie-titre").innerText = "🛒 Épicerie - Semaine " + (sIdx + 1);
+        let texteComplet = "";
+        semaines[sIdx].forEach(repas => {
+            if (repas && repas.nom) {
+                texteComplet += "🔹 " + repas.nom.toUpperCase() + " :\n";
+                texteComplet += (repas.ing && repas.ing.trim() !== "") ? repas.ing.trim() + "\n" : "(Aucun ingrédient inscrit)\n";
+                texteComplet += "\n-----------------------\n\n";
+            }
+        });
+        document.getElementById("epicerie-corps").innerText = texteComplet;
+        document.getElementById("box-epicerie").style.display = "block";
     }
 
-    function sauver() {
-        let contenu = document.getElementById("texte").value;
-        donneesGlobales.recettes[platChoisi] = contenu;
-        pousserVersCloud();
-        alert("Recette synchronisée pour la famille !");
-        fermer();
-    }
-
-    function fermer() { document.getElementById("box").style.display = "none"; }
+    function fermerFenetre() { document.getElementById("box-ingredients").style.display = "none"; }
+    function fermerEpicerie() { document.getElementById("box-epicerie").style.display = "none"; }
 
     function afficherInterface() {
+        const badge = document.getElementById("statut-badge"); const hautEdition = document.getElementById("zone-edition-haut");
+        if (estAdmin) {
+            badge.className = "badge-mode mode-admin"; badge.innerText = "🔓 Mode Administrateur Actif"; hautEdition.style.display = "flex";
+        } else {
+            badge.className = "badge-mode mode-lecture"; badge.innerText = "🔒 Mode Lecture Seule"; hautEdition.style.display = "none";
+        }
         let gridHtml = "";
-        donneesGlobales.semaines.forEach((semaine, sIdx) => {
-            gridHtml += '<div class="card"><h3>Semaine ' + (sIdx + 1) + '</h3>';
+        semaines.forEach((semaine, sIdx) => {
+            gridHtml += '<div class="card"><div><h3>Semaine ' + (sIdx + 1) + '</h3>';
             semaine.forEach((repas, rIdx) => {
-                let nomEscaped = repas.nom.replace(/'/g, "\\'");
-                gridHtml += '  <div class="repas-block">';
-                gridHtml += '    <div class="repas-header">';
-                gridHtml += '      <div class="repas-controles">';
-                gridHtml += '        <select class="select-cat" onchange="changerCategorie(' + sIdx + ',' + rIdx + ', this)">';
-                ["bœuf", "poulet", "porc", "poisson", "pâte"].forEach(cat => {
-                    let sel = (cat === repas.type) ? "selected" : "";
-                    gridHtml += '          <option value="' + cat + '" ' + sel + '>' + cat.charAt(0).toUpperCase() + cat.slice(1) + '</option>';
-                });
-                gridHtml += '        </select> ';
+                let nomAffichage = (repas && repas.nom) ? repas.nom : "Repas libre";
+                gridHtml += '<div class="repas-block"><div class="repas-header">';
+                gridHtml += '<span class="repas-nom" onclick="ouvrirIngredients(\'semaine\',' + sIdx + ',' + rIdx + ',0)">' + nomAffichage + '</span>';
+                if (estAdmin) {
+                    gridHtml += '<select class="select-echange" onchange="changerRepas(' + sIdx + ',' + rIdx + ', this)">';
+                    gridHtml += '<option value="" disabled selected>🔄</option>';
+                    extras.forEach((ex, exIdx) => { gridHtml += '<option value="' + exIdx + '">' + ex.nom + '</option>'; });
+                    gridHtml += '</select>';
+                }
+                gridHtml += '</div></div>';
+            });
+            gridHtml += '</div><button class="btn-epicerie" onclick="genererEpicerieSemaine(' + sIdx + ')">🛒 Liste d\'épicerie</button></div>';
+        });
+        document.getElementById("menu-grid").innerHTML = gridHtml;
+        let extrasHtml = "";
+        extras.forEach((ex, exIdx) => { if (ex && ex.nom) extrasHtml += '<div class="extra-item" onclick="ouvrirIngredients(\'extra\',0,0,' + exIdx + ')">' + ex.nom + '</div>'; });
+        document.getElementById("extras-liste").innerHTML = extrasHtml;
+    }
+    connecterEtCharger();
+</script>
+</body>
+</html>
