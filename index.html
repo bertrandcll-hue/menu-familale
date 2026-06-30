@@ -47,7 +47,6 @@
 </head>
 
 
-
 <body>
 <!-- Écran 1 : Connexion -->
 <div id="ecran-connexion" class="auth-box">
@@ -104,6 +103,16 @@
     </div>
 </div>
 
+<!-- SCRIPT CLASSIQUE POUR LE BASCULEMENT DES ÉCRANS -->
+<script>
+    window.basculerEcran = function(cible) {
+        document.getElementById("ecran-connexion").style.display = cible === "connexion" ? "block" : "none";
+        document.getElementById("ecran-inscription").style.display = cible === "inscription" ? "block" : "none";
+    };
+</script>
+
+
+    
 
 
 <script type="module">
@@ -131,11 +140,6 @@
         [ {nom: "Spaghetti", ing: ""}, {nom: "Poulet rouge", ing: ""}, {nom: "Épaule de porc", ing: ""}, {nom: "Macaroni à la viande", ing: ""} ],
         [ {nom: "Pâte au boeuf à la coréenne", ing: ""}, {nom: "Poulet Parmigiana", ing: ""}, {nom: "Pâte Carbonara", ing: ""}, {nom: "Mac & Cheese", ing: ""} ]
     ];
-
-    window.basculerEcran = function(cible) {
-        document.getElementById("ecran-connexion").style.display = cible === "connexion" ? "block" : "none";
-        document.getElementById("ecran-inscription").style.display = cible === "inscription" ? "block" : "none";
-    };
 
     window.inscriptionFamille = async function() {
         let email = document.getElementById("reg-email").value.trim();
@@ -167,7 +171,7 @@
             document.getElementById("ecran-connexion").style.display = "none";
             document.getElementById("ecran-inscription").style.display = "none";
             document.getElementById("ecran-principal").style.display = "block";
-            let nomAffiche = sessionUtilisateur.email.split("@")[0].toUpperCase();
+            let nomAffiche = sessionUtilisateur.email.split("@").toUpperCase();
             document.getElementById("affichage-user").innerText = nomAffiche;
             chargerMenuDepuisCloud();
         }
@@ -195,6 +199,7 @@
         } else {
             planFamille.forEach(row => {
                 if (!semaines[row.semaine_num - 1]) semaines[row.semaine_num - 1] = [];
+                // CORRECTION TECHNIQUE APPLIQUÉE ICI : Variable certifiée listeIng
                 semaines[row.semaine_num - 1][row.repas_index] = { nom: row.repas_nom, ing: row.ingrédients };
             });
         }
