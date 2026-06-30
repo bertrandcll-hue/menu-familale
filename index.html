@@ -139,7 +139,7 @@
             let { data, error } = await supabase.from('comptes_familles').select('*').eq('courriel', email);
             
             if (data && data.length > 0) {
-                let famille = data[0];
+                let famille = data[0]; 
                 if (famille.mot_de_passe !== pass) {
                     alert("Mot de passe incorrect pour cette famille.");
                     document.getElementById("loading").style.display = "none";
@@ -194,7 +194,12 @@
         } catch(e) {}
         document.getElementById("ecran-connexion").style.display = "block";
     }
-    async function chargerMenuDepuisCloud() {
+
+
+
+
+
+        async function chargerMenuDepuisCloud() {
         document.getElementById("loading").style.display = "block";
         
         let { data: planFamille } = await supabase.from('plans_familles').select('*').eq('user_id', identifiantFamille).order('semaine_num', { ascending: true });
