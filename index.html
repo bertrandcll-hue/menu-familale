@@ -146,20 +146,30 @@
         document.getElementById("ecran-login").style.display = "none";
         document.getElementById("ecran-principal").style.display = "block";
         document.getElementById("affichage-code-actif").innerText = codeFamilleActif.toUpperCase();
+        document.getElementById("titre-principal").innerText = "Planificateur - " + codeFamilleActif.toUpperCase();
         document.getElementById("loading").style.display = "block";
 
         try {
-            // 1. Charger ou créer le plan de la famille sur une route de création automatique
-            let rPlan = await fetch("https://jsonbin.io", {
-                method: "GET",
-                headers: { "X-Master-Key": MASTER_KEY, "X-Bin-Name": "plan-" + codeFamilleActif }
-            });
-            
-            // Si la famille n'existe pas encore, jsonbin renvoie une erreur, on l'initialise localement
+            // SÉCURITÉ : On pré-remplit avec la base pour éviter l'écran blanc si la lecture échoue
             donneesFamille.semaines = JSON.parse(JSON.stringify(REPAS_DE_BASE));
 
-            // 2. Charger la banque collective d'extras (Partagée par tout le monde)
-            let rExtras = await fetch("https://jsonbin.io/" + BIN_EXTRAS_COLLECTIF + "/latest", {
+            // Lecture sécurisée du plan privé de la famille (par requêtes de métadonnées)
+            let rPlan = await fetch("https://jsonbin.io" + codeFamilleActif + "/latest", {
+                headers: { "X-Master-Key": MASTER_KEY }
+            });
+            
+            if (rPlan.ok) {
+                let jP = await rPlan.json();
+                if (jP && jP.record && jP.record.semaines) {
+                    donneesFamille.semaines = jP.record.semaines;
+                }
+            } else if (rPlan.status === 404) {
+                // Si c'est une toute nouvelle famille, on lui génère son premier fichier sur le cloud
+                await sauvegarderPlanPrive();
+            }
+
+            // Lecture de la banque collective d'extras partagée par tous les amis
+            let rExtras = await fetch("https://jsonbin.io" + BIN_EXTRAS_COLLECTIF + "/latest", {
                 headers: { "X-Master-Key": MASTER_KEY }
             });
             if (rExtras.ok) {
@@ -167,12 +177,17 @@
                 donneesFamille.extras = jE.record ? jE.record.extras : [];
             }
         } catch(err) {
-            donneesFamille.extras = [ {nom: "Lasagne", ing: ""} ];
+            console.log("Mode local activé");
         }
         document.getElementById("loading").style.display = "none";
         afficherInterface();
     }
 
+
+
+
+
+    
 
 
 
