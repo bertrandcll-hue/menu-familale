@@ -152,25 +152,24 @@
         document.getElementById("titre-principal").innerText = "Planificateur - " + codeFamilleActif.toUpperCase();
         document.getElementById("loading").style.display = "block";
         try {
-            let rPlan = await fetch("https://jsonbin.io", {
-                headers: { "X-Master-Key": MASTER_KEY, "X-Bin-Name": "plan-" + codeFamilleActif }
+            // Lecture directe sur votre compte jsonbin.io sans passer par une collection externe
+            let rPlan = await fetch("https://jsonbin.io" + codeFamilleActif + "/latest", {
+                headers: { "X-Master-Key": MASTER_KEY }
             });
             if (rPlan.status === 404 || !rPlan.ok) {
                 donneesFamille.semaines = JSON.parse(JSON.stringify(REPAS_DE_BASE)); await sauvegarderPlanPrive();
             } else { 
                 let jP = await rPlan.json(); 
-                // Correction de la lecture sécurisée du fichier
                 donneesFamille.semaines = jP.record ? jP.record.semaines : REPAS_DE_BASE; 
             }
 
             let rExtras = await fetch("https://jsonbin.io", {
-                headers: { "X-Master-Key": MASTER_KEY, "X-Bin-Name": "catalogue-commun-extras" }
+                headers: { "X-Master-Key": MASTER_KEY }
             });
             if (rExtras.status === 404 || !rExtras.ok) {
                 donneesFamille.extras = JSON.parse(JSON.stringify(EXTRAS_DE_SECOURS)); await sauvegarderExtrasCollectifs();
             } else { 
                 let jE = await rExtras.json(); 
-                // Correction de la lecture sécurisée du catalogue commun
                 donneesFamille.extras = jE.record ? jE.record.extras : EXTRAS_DE_SECOURS; 
             }
         } catch(err) {
@@ -185,15 +184,11 @@
 
 
 
-
-
-
-
         async function sauvegarderPlanPrive() {
         try {
             await fetch("https://jsonbin.io", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY, "X-Bin-Name": "plan-" + codeFamilleActif, "X-Collection-Id": "65b7fc01dc746540e87b7a12" },
+                headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY, "X-Bin-Name": "plan-" + codeFamilleActif },
                 body: JSON.stringify({ semaines: donneesFamille.semaines })
             });
         } catch(e) {}
@@ -203,7 +198,7 @@
         try {
             await fetch("https://jsonbin.io", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY, "X-Bin-Name": "catalogue-commun-extras", "X-Collection-Id": "65b7fc01dc746540e87b7a12" },
+                headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY, "X-Bin-Name": "catalogue-commun-extras" },
                 body: JSON.stringify({ extras: donneesFamille.extras })
             });
         } catch(e) {}
@@ -273,11 +268,11 @@
                 let nomAffichage = (repas && repas.nom) ? repas.nom : "Repas libre";
                 let spanId = `nom-${sIdx}-${rIdx}`, selectId = `sel-${sIdx}-${rIdx}`;
                 gridHtml += `<div class="repas-block"><div class="repas-header"><span class="repas-nom" id="${spanId}">${nomAffichage}</span>`;
-                gridHtml += `<select class="select-echange" id="${selectId}"><option value="" disabled selected>🔄</option>`;
+                gridHtml += `<select class="select-echange" id="${selectId}"><option value="" disabled selected>🔄</option>';
                 donneesFamille.extras.forEach((ex, exIdx) => { gridHtml += `<option value="${exIdx}">${ex.nom}</option>`; });
                 gridHtml += '</select></div></div>';
             });
-            gridHtml += `</div><button class="btn-epicerie" id="btn-epi-${sIdx}">🛒 Liste d'épicerie</button></div>';
+            gridHtml += `</div><button class="btn-epicerie" id="btn-epi-${sIdx}">🛒 Liste d'épicerie</button></div>`;
         });
         document.getElementById("menu-grid").innerHTML = gridHtml;
         
