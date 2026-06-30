@@ -112,15 +112,6 @@
     const SUPABASE_URL = "https://yfhqgfgydxwvemrvzjyx.supabase.co";
     const SUPABASE_KEY = "sb_publishable_H_kveRZNOFMYZQnyIDCu_A_x-3SEkOI";
     // -----------------------------------------------------------------
-<script type="module">
-    import { createClient } from "https://jsdelivr.net";
-
-    // -----------------------------------------------------------------
-    // RECOPIEZ VOS DEUX ACCÈS DEPUIS LES PARAMÈTRES API DE SUPABASE :
-    // -----------------------------------------------------------------
-    const SUPABASE_URL = "METTEZ_VOTRE_PROJECT_URL_ICI";
-    const SUPABASE_KEY = "METTEZ_VOTRE_ANON_KEY_ICI";
-    // -----------------------------------------------------------------
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -148,7 +139,7 @@
             let { data, error } = await supabase.from('comptes_familles').select('*').eq('courriel', email);
             
             if (data && data.length > 0) {
-                let famille = data[0]; // Correction : lecture du premier élément du tableau
+                let famille = data[0]; // Correction de l'index du tableau
                 if (famille.mot_de_passe !== pass) {
                     alert("Mot de passe incorrect pour cette famille.");
                     document.getElementById("loading").style.display = "none"; return;
@@ -161,7 +152,7 @@
                     document.getElementById("loading").style.display = "none"; return;
                 }
                 alert("✨ Bienvenue ! Votre espace famille privé a été créé.");
-                ouvrirSession(nouveauCompte[0].id, nouveauCompte[0].courriel); // Correction du tableau
+                ouvrirSession(nouveauCompte[0].id, nouveauCompte[0].courriel); // Correction de l'index du tableau
             }
         } catch (err) {
             alert("Erreur : " + err.message); document.getElementById("loading").style.display = "none";
@@ -172,7 +163,6 @@
         try { localStorage.setItem("session_famille_id", id); localStorage.setItem("session_famille_email", email); } catch(e) {}
         location.reload();
     }
-    // Rendre la fonction accessible au bouton HTML de manière universelle
     window.ouvrirSession = abrirSession;
 
     window.deconnexion = function() {
@@ -182,13 +172,14 @@
 
 
 
-    
-
 
     
 
 
-       async function chargerMenuDepuisCloud() {
+    
+
+
+     async function chargerMenuDepuisCloud() {
         document.getElementById("loading").style.display = "block";
         try {
             let { data: planFamille } = await supabase.from('plans_familles').select('*').eq('user_id', identifiantFamille).order('semaine_num', { ascending: true });
@@ -291,7 +282,7 @@
             identifiantFamille = idSauve; courrielFamille = emailSauve;
             document.getElementById("ecran-connexion").style.display = "none";
             document.getElementById("ecran-principal").style.display = "block";
-            // Correction : extraction du premier élément de la liste avant la mise en majuscule
+            // Correction : extraction du premier mot de la liste avant la mise en majuscule
             let prenom = String(emailSauve).split("@")[0].toUpperCase();
             document.getElementById("affichage-user").innerText = prenom;
             chargerMenuDepuisCloud();
